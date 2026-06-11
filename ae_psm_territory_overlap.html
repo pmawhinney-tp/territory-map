@@ -1,37 +1,68 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AE / PSM Territory Map</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <style>
-  .section-label { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .map-title { font-size: 15px; font-weight: 500; color: var(--color-text-primary); margin: 0 0 8px; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fff; color: #1a1a1a; padding: 2rem; max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 500; margin-bottom: 1.5rem; color: #1a1a1a; }
+  .section-label { font-size: 12px; font-weight: 600; color: #888; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .map-title { font-size: 15px; font-weight: 500; color: #1a1a1a; margin: 0 0 8px; }
   .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
-  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-secondary); }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555; }
   .legend-swatch { width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0; }
-  .tooltip { position: absolute; background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: 8px; padding: 8px 12px; font-size: 12px; color: var(--color-text-primary); pointer-events: none; opacity: 0; transition: opacity 0.15s; max-width: 200px; z-index: 10; }
-  .state-path { cursor: pointer; stroke: #fff; stroke-width: 0.5; }
-  .state-path:hover { opacity: 0.75; stroke-width: 1.5; }
-  svg text { font-family: var(--font-sans); font-size: 7px; pointer-events: none; }
-  h2.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+  .tooltip { position: fixed; background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 8px 12px; font-size: 12px; color: #1a1a1a; pointer-events: none; opacity: 0; transition: opacity 0.15s; max-width: 200px; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .state-path { cursor: pointer; stroke: #fff; stroke-width: 0.5px; }
+  .state-path:hover { opacity: 0.75; stroke-width: 1.5px; }
+  svg text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 7px; pointer-events: none; }
   .filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-  .filter-btn { font-size: 12px; padding: 4px 10px; border-radius: 8px; border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-secondary); cursor: pointer; }
+  .filter-btn { font-size: 12px; padding: 4px 12px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #666; cursor: pointer; transition: all 0.1s; }
+  .filter-btn:hover { background: #f5f5f5; }
+  .filter-btn.active { background: #f0f0f0; color: #1a1a1a; border-color: #aaa; font-weight: 500; }
   .alignment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }
-  .align-card { background: var(--color-background-secondary); border-radius: 12px; padding: 1rem 1.25rem; }
-  .align-card-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
-  .align-card-subtitle { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 10px; }
+  .align-card { background: #f8f8f6; border-radius: 12px; padding: 1rem 1.25rem; }
+  .align-card-title { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+  .align-card-subtitle { font-size: 11px; color: #888; margin-bottom: 10px; }
   .ae-chip { display: inline-flex; align-items: center; font-size: 11px; padding: 3px 8px; border-radius: 8px; margin: 2px; }
   .ae-list { display: flex; flex-wrap: wrap; gap: 4px; }
-  .ae-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 0.5px solid var(--color-border-tertiary); font-size: 13px; flex-wrap: wrap; }
+  .ae-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px solid #eee; font-size: 13px; flex-wrap: wrap; }
   .ae-row:last-child { border-bottom: none; }
-  .ae-name { font-weight: 500; color: var(--color-text-primary); display: flex; align-items: center; gap: 8px; min-width: 200px; }
+  .ae-name { font-weight: 500; color: #1a1a1a; display: flex; align-items: center; gap: 8px; min-width: 200px; }
   .ae-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .iae-badge { font-size: 10px; font-weight: 400; color: var(--color-text-secondary); }
-  .psm-tag { font-size: 11px; color: var(--color-text-secondary); background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: 8px; padding: 2px 8px; white-space: nowrap; }
+  .iae-badge { font-size: 10px; font-weight: 400; color: #888; }
+  .psm-tag { font-size: 11px; color: #555; background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 2px 8px; white-space: nowrap; }
   .psm-tags { display: flex; gap: 4px; flex-wrap: wrap; }
   .map-block { position: relative; margin-bottom: 2rem; }
-  .divider { border: none; border-top: 0.5px solid var(--color-border-tertiary); margin: 2rem 0; }
+  .divider { border: none; border-top: 1px solid #eee; margin: 2rem 0; }
+  @media (max-width: 600px) { .alignment-grid { grid-template-columns: 1fr; } body { padding: 1rem; } }
 </style>
+</head>
+<body>
 
-<h2 class="sr-only">AE and PSM territory alignment maps for TalkingPoints sales team</h2>
+<h1>AE / PSM Territory Alignment</h1>
 
-<div id="alignment-top"></div>
+<!-- ALIGNMENT TABLES — hardcoded -->
+<p class="section-label">PSM → AE alignment</p>
+<div class="alignment-grid">
+  <div class="align-card">
+    <div class="align-card-title">Donnaly / Sujeiry</div>
+    <div class="align-card-subtitle">AEs in their territory</div>
+    <div class="ae-list" id="ds-chips"></div>
+  </div>
+  <div class="align-card">
+    <div class="align-card-title">Kristin / Kaleigh</div>
+    <div class="align-card-subtitle">AEs in their territory</div>
+    <div class="ae-list" id="kk-chips"></div>
+  </div>
+</div>
+
+<p class="section-label" style="margin-top:1rem;">AE → PSM alignment</p>
+<div id="ae-rows"></div>
+
 <hr class="divider">
 
 <div class="map-block">
@@ -52,14 +83,8 @@
   <div class="tooltip" id="tooltip2"></div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <script>
 const IAE_NAMES = new Set(["Vanessa Tompkins", "Whitney Cooper"]);
-
-function displayName(name) {
-  return IAE_NAMES.has(name) ? `${name} <span class="iae-badge">(IAE)</span>` : name;
-}
 
 const AE_COLORS = {
   "Whitney Cooper": "#0F6E56",
@@ -75,60 +100,44 @@ const AE_LIGHTS = {
   "Brett Wheeler": "#E6F1FB",
   "Chris Sorrell": "#FAEEDA"
 };
-const IAE_COLORS = {
-  "Vanessa Tompkins": "#534AB7",
-  "Whitney Cooper": "#0F6E56"
+const IAE_COLORS = { "Vanessa Tompkins": "#534AB7", "Whitney Cooper": "#0F6E56" };
+const IAE_LIGHTS = { "Vanessa Tompkins": "#EEEDFE", "Whitney Cooper": "#E1F5EE" };
+const ALL_COLORS = Object.assign({}, AE_COLORS, {"Vanessa Tompkins": "#534AB7"});
+const ALL_LIGHTS = Object.assign({}, AE_LIGHTS, {"Vanessa Tompkins": "#EEEDFE"});
+
+const PSM_TO_AE = {
+  "Donnaly/Sujeiry": ["Adam Carruthers","Chris Sorrell","Jake Stewart","Brett Wheeler","Whitney Cooper","Vanessa Tompkins"],
+  "Kristin/Kaleigh": ["Chris Sorrell","Whitney Cooper","Adam Carruthers","Brett Wheeler","Vanessa Tompkins"]
 };
-const IAE_LIGHTS = {
-  "Vanessa Tompkins": "#EEEDFE",
-  "Whitney Cooper": "#E1F5EE"
+const AE_TO_PSM = {
+  "Vanessa Tompkins": ["Donnaly/Sujeiry","Kristin/Kaleigh"],
+  "Whitney Cooper":   ["Donnaly/Sujeiry","Kristin/Kaleigh"],
+  "Adam Carruthers":  ["Donnaly/Sujeiry"],
+  "Jake Stewart":     ["Donnaly/Sujeiry"],
+  "Brett Wheeler":    ["Kristin/Kaleigh","Donnaly/Sujeiry"],
+  "Chris Sorrell":    ["Donnaly/Sujeiry","Kristin/Kaleigh"]
 };
 
 const PSM_STATES_DS = new Set(["AL","AR","CT","DE","FL","GA","IN","KY","LA","ME","MD","MA","MS","MO","NE","NH","NJ","NY","NC","ND","PA","RI","SC","SD","TN","TX","VT","VA","WV","DC"]);
 const PSM_STATES_KK = new Set(["AZ","CA","AK","CO","HI","ID","IL","KS","MT","NV","NM","OR","UT","WA","WI","WY","IA","MN","MI","OH","OK"]);
 
-const ADAM_STATES = ["VA","NC","SC","GA","FL","AL","MS","DC","MD","AK"];
-const JAKE_NE = ["ME","NH","VT","MA","RI","CT","NY","NJ","DE","PA"];
+const ADAM_STATES  = ["VA","NC","SC","GA","FL","AL","MS","DC","MD","AK"];
+const JAKE_NE      = ["ME","NH","VT","MA","RI","CT","NY","NJ","DE","PA"];
 const BRETT_STATES = ["MN","WI","IL","MI","TN","IN","OH","KY","WV","WA","OR","ID","WY"];
 const CHRIS_STATES = ["TX","OK","AR","LA","IA","NE","KS","MO","NM","NV","CO","UT","AZ"];
-const WHITNEY_MQL = ["CA","MT","HI","ND","SD","AK"];
-const VANESSA_T7_A1 = ["ME","NH","VT","MA","RI","CT","NY","NJ","DE","PA","MD","DC","VA","NC","SC","GA","FL","AL","MS","TN","KY","WV","IN","OH","MI","WI","MN","ND","SD","NE","IA","MO","AR","LA","TX","OK","KS"];
+const WHITNEY_AE   = ["CA","OR","WA","ID","WY","NV","UT","CO","AZ","NM","HI","MT","ND","SD","AK"];
 
 const AE_STATE_MAP = {};
 ADAM_STATES.forEach(s => AE_STATE_MAP[s] = "Adam Carruthers");
 JAKE_NE.forEach(s => AE_STATE_MAP[s] = "Jake Stewart");
 BRETT_STATES.forEach(s => AE_STATE_MAP[s] = "Brett Wheeler");
 CHRIS_STATES.forEach(s => AE_STATE_MAP[s] = "Chris Sorrell");
-WHITNEY_MQL.forEach(s => AE_STATE_MAP[s] = "Whitney Cooper");
-["CA","OR","WA","ID","MT","WY","NV","UT","CO","AZ","NM","HI"].forEach(s => { if (!AE_STATE_MAP[s]) AE_STATE_MAP[s] = "Whitney Cooper"; });
+WHITNEY_AE.forEach(s => { if (!AE_STATE_MAP[s]) AE_STATE_MAP[s] = "Whitney Cooper"; });
 
+const VANESSA_IAE = new Set(["WA","OR","ID","MT","WY","ND","SD","MN","WI","IL","IN","MI","OH","PA","NY","VT","NH","MA","CT","RI","DE","ME","NJ"]);
+const ALL_US = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC"];
 const IAE_STATE_MAP = {};
-WHITNEY_MQL.forEach(s => IAE_STATE_MAP[s] = "Whitney Cooper");
-["CA","OR","WA","ID","MT","WY","NV","UT","CO","AZ","NM","HI"].forEach(s => { if (!IAE_STATE_MAP[s]) IAE_STATE_MAP[s] = "Whitney Cooper"; });
-VANESSA_T7_A1.forEach(s => { if (!IAE_STATE_MAP[s]) IAE_STATE_MAP[s] = "Vanessa Tompkins"; });
-
-const AE_PSM_OVERRIDE = {
-  "Vanessa Tompkins": ["Donnaly/Sujeiry", "Kristin/Kaleigh"],
-  "Whitney Cooper": ["Donnaly/Sujeiry", "Kristin/Kaleigh"]
-};
-
-function getPSMsForAE(name, stateMap) {
-  if (AE_PSM_OVERRIDE[name]) return AE_PSM_OVERRIDE[name];
-  const psms = new Set();
-  Object.entries(stateMap).forEach(([s, ae]) => {
-    if (ae === name) {
-      if (PSM_STATES_DS.has(s)) psms.add("Donnaly/Sujeiry");
-      if (PSM_STATES_KK.has(s)) psms.add("Kristin/Kaleigh");
-    }
-  });
-  return [...psms];
-}
-
-function getAEsForPSM(psmStates, stateMap) {
-  const aes = new Set();
-  psmStates.forEach(s => { if (stateMap[s]) aes.add(stateMap[s]); });
-  return [...aes];
-}
+ALL_US.forEach(s => { IAE_STATE_MAP[s] = VANESSA_IAE.has(s) ? "Vanessa Tompkins" : "Whitney Cooper"; });
 
 const nameToAbbr = {
   "Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO",
@@ -142,13 +151,22 @@ const nameToAbbr = {
   "West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY","District of Columbia":"DC"
 };
 
+function chip(ae) {
+  return `<span class="ae-chip" style="background:${ALL_LIGHTS[ae]};border:1px solid ${ALL_COLORS[ae]};color:${ALL_COLORS[ae]}">${ae}${IAE_NAMES.has(ae) ? ' <span style="font-size:10px;opacity:0.8">(IAE)</span>' : ''}</span>`;
+}
+
+document.getElementById("ds-chips").innerHTML = PSM_TO_AE["Donnaly/Sujeiry"].map(chip).join("");
+document.getElementById("kk-chips").innerHTML = PSM_TO_AE["Kristin/Kaleigh"].map(chip).join("");
+document.getElementById("ae-rows").innerHTML = Object.entries(AE_TO_PSM).map(([ae, psms]) =>
+  `<div class="ae-row">
+    <div class="ae-name"><div class="ae-dot" style="background:${ALL_COLORS[ae]}"></div>${ae}${IAE_NAMES.has(ae) ? ' <span class="iae-badge">(IAE)</span>' : ''}</div>
+    <div class="psm-tags">${psms.map(p => `<span class="psm-tag">${p}</span>`).join("")}</div>
+  </div>`
+).join("");
+
 function setActiveBtn(container, filter) {
   container.querySelectorAll(".filter-btn").forEach(b => {
-    const active = b.dataset.filter === filter;
-    b.style.background = active ? "var(--color-background-secondary)" : "var(--color-background-primary)";
-    b.style.color = active ? "var(--color-text-primary)" : "var(--color-text-secondary)";
-    b.style.borderColor = active ? "var(--color-border-primary)" : "var(--color-border-secondary)";
-    b.style.fontWeight = active ? "500" : "400";
+    b.classList.toggle("active", b.dataset.filter === filter);
   });
 }
 
@@ -156,69 +174,22 @@ function buildFilters(containerId, callback) {
   const c = document.getElementById(containerId);
   ["all","ae","psm"].forEach(f => {
     const btn = document.createElement("button");
-    btn.className = "filter-btn";
+    btn.className = "filter-btn" + (f === "all" ? " active" : "");
     btn.dataset.filter = f;
     btn.textContent = f === "all" ? "All" : f === "ae" ? "AE only" : "PSM only";
     btn.addEventListener("click", () => { setActiveBtn(c, f); callback(f); });
     c.appendChild(btn);
   });
-  setActiveBtn(c, "all");
 }
 
-function buildLegendEl(containerId, colorMap, lightMap) {
+function buildLegend(containerId, colorMap, lightMap) {
   const leg = document.getElementById(containerId);
   let html = Object.entries(colorMap).map(([name, color]) =>
-    `<div class="legend-item"><div class="legend-swatch" style="background:${lightMap[name]};border:1.5px solid ${color}"></div><span>${name}${IAE_NAMES.has(name) ? ' <span style="font-size:10px;color:var(--color-text-secondary)">(IAE)</span>' : ''}</span></div>`
+    `<div class="legend-item"><div class="legend-swatch" style="background:${lightMap[name]};border:1.5px solid ${color}"></div><span>${name}${IAE_NAMES.has(name) ? ' <span style="font-size:10px;color:#888">(IAE)</span>' : ''}</span></div>`
   ).join("");
-  html += `<div class="legend-item"><div class="legend-swatch" style="background:#fff;border:0.5px solid #ccc;"></div><span>Donnaly/Sujeiry (PSM)</span></div>`;
-  html += `<div class="legend-item"><div class="legend-swatch" style="background-color:#fff;background-image:radial-gradient(circle,rgba(136,135,128,0.7) 1.8px,transparent 1.8px);background-size:7px 7px;border:0.5px solid #ccc;"></div><span>Kristin/Kaleigh (PSM)</span></div>`;
+  html += `<div class="legend-item"><div class="legend-swatch" style="background:#fff;border:1px solid #ccc;"></div><span>Donnaly/Sujeiry (PSM)</span></div>`;
+  html += `<div class="legend-item"><div class="legend-swatch" style="background-color:#fff;background-image:radial-gradient(circle,rgba(136,135,128,0.7) 1.8px,transparent 1.8px);background-size:7px 7px;border:1px solid #ccc;"></div><span>Kristin/Kaleigh (PSM)</span></div>`;
   leg.innerHTML = html;
-}
-
-function buildAlignmentTop() {
-  const allColors = Object.assign({}, AE_COLORS, {"Vanessa Tompkins": "#534AB7"});
-  const allLights = Object.assign({}, AE_LIGHTS, {"Vanessa Tompkins": "#EEEDFE"});
-  const allStates = Object.assign({}, AE_STATE_MAP, IAE_STATE_MAP);
-
-  const dsAEs = getAEsForPSM([...PSM_STATES_DS], allStates);
-  const kkAEs = getAEsForPSM([...PSM_STATES_KK], allStates);
-
-  function chips(aes) {
-    return aes.filter(ae => allColors[ae]).map(ae =>
-      `<span class="ae-chip" style="background:${allLights[ae]};border:1px solid ${allColors[ae]};color:${allColors[ae]}">${ae}${IAE_NAMES.has(ae) ? ' <span style="font-size:10px;opacity:0.8">(IAE)</span>' : ''}</span>`
-    ).join("");
-  }
-
-  function aeRows() {
-    return Object.keys(allColors).map(ae => {
-      const psms = getPSMsForAE(ae, allStates);
-      return `<div class="ae-row">
-        <div class="ae-name">
-          <div class="ae-dot" style="background:${allColors[ae]}"></div>
-          ${ae}${IAE_NAMES.has(ae) ? ' <span class="iae-badge">(IAE)</span>' : ''}
-        </div>
-        <div class="psm-tags">${psms.map(p => `<span class="psm-tag">${p}</span>`).join("")}</div>
-      </div>`;
-    }).join("");
-  }
-
-  document.getElementById("alignment-top").innerHTML = `
-    <p class="section-label">PSM → AE alignment</p>
-    <div class="alignment-grid">
-      <div class="align-card">
-        <div class="align-card-title">Donnaly / Sujeiry</div>
-        <div class="align-card-subtitle">AEs in their territory</div>
-        <div class="ae-list">${chips(dsAEs)}</div>
-      </div>
-      <div class="align-card">
-        <div class="align-card-title">Kristin / Kaleigh</div>
-        <div class="align-card-subtitle">AEs in their territory</div>
-        <div class="ae-list">${chips(kkAEs)}</div>
-      </div>
-    </div>
-    <p class="section-label" style="margin-top:1rem;">AE → PSM alignment</p>
-    <div>${aeRows()}</div>
-  `;
 }
 
 fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
@@ -230,56 +201,43 @@ fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
     const stateNames = {};
     us.objects.states.geometries.forEach(g => { stateNames[g.id] = g.properties.name; });
 
-    buildAlignmentTop();
-    buildLegendEl("legend1", AE_COLORS, AE_LIGHTS);
-    buildLegendEl("legend2", IAE_COLORS, IAE_LIGHTS);
+    buildLegend("legend1", AE_COLORS, AE_LIGHTS);
+    buildLegend("legend2", IAE_COLORS, IAE_LIGHTS);
 
     function makeMap(svgId, tooltipId, stateMap, colorMap, lightMap) {
       const svg = d3.select("#" + svgId);
-      svg.append("defs").html(`
-        <pattern id="pat-kk-${svgId}" patternUnits="userSpaceOnUse" width="7" height="7">
-          <circle cx="3.5" cy="3.5" r="1.8" fill="#888780" fill-opacity="0.7"/>
-        </pattern>
-      `);
+      svg.append("defs").html(`<pattern id="pat-${svgId}" patternUnits="userSpaceOnUse" width="7" height="7"><circle cx="3.5" cy="3.5" r="1.8" fill="#888780" fill-opacity="0.7"/></pattern>`);
       const tip = document.getElementById(tooltipId);
-      const container = document.getElementById(svgId).parentElement;
       let filter = "all";
-      const baseG = svg.append("g");
-      const psmKKG = svg.append("g");
-      const labG = svg.append("g");
+      const baseG = svg.append("g"), dotG = svg.append("g"), labG = svg.append("g");
 
-      function fill(abbr, f) {
+      function fillColor(abbr, f) {
         if (f === "psm") return "#e8e8e0";
         return lightMap[stateMap[abbr]] || "#e8e8e0";
       }
 
-      baseG.selectAll("path")
-        .data(states.features)
-        .join("path")
-        .attr("class","state-path")
-        .attr("d", path)
-        .attr("fill", d => fill(nameToAbbr[stateNames[d.id]], filter))
+      baseG.selectAll("path").data(states.features).join("path")
+        .attr("class","state-path").attr("d", path)
+        .attr("fill", d => fillColor(nameToAbbr[stateNames[d.id]], filter))
         .attr("stroke","#fff").attr("stroke-width","0.5")
         .on("mousemove", function(event, d) {
-          const name = stateNames[d.id];
-          const abbr = nameToAbbr[name];
+          const name = stateNames[d.id], abbr = nameToAbbr[name];
           const ae = stateMap[abbr] || "—";
           const aeLabel = IAE_NAMES.has(ae) ? `${ae} (IAE)` : ae;
           let psm = "—";
           if (PSM_STATES_DS.has(abbr)) psm = "Donnaly/Sujeiry";
           else if (PSM_STATES_KK.has(abbr)) psm = "Kristin/Kaleigh";
-          const cr = container.getBoundingClientRect();
-          tip.innerHTML = `<strong style="font-size:13px">${name} (${abbr||""})</strong><br><span style="color:var(--color-text-secondary);font-size:11px">AE: ${aeLabel}</span><br><span style="color:var(--color-text-secondary);font-size:11px">PSM: ${psm}</span>`;
-          tip.style.left = (event.clientX - cr.left + 10) + "px";
-          tip.style.top = (event.clientY - cr.top - 10) + "px";
+          tip.innerHTML = `<strong style="font-size:13px">${name} (${abbr||""})</strong><br><span style="color:#666;font-size:11px">AE: ${aeLabel}</span><br><span style="color:#666;font-size:11px">PSM: ${psm}</span>`;
+          tip.style.left = (event.clientX + 12) + "px";
+          tip.style.top = (event.clientY - 10) + "px";
           tip.style.opacity = "1";
         })
         .on("mouseleave", () => { tip.style.opacity = "0"; });
 
-      psmKKG.selectAll("path")
+      dotG.selectAll("path")
         .data(states.features.filter(d => PSM_STATES_KK.has(nameToAbbr[stateNames[d.id]])))
         .join("path").attr("class","state-path")
-        .attr("d", path).attr("fill", `url(#pat-kk-${svgId})`)
+        .attr("d", path).attr("fill", `url(#pat-${svgId})`)
         .attr("stroke","none").style("pointer-events","none");
 
       states.features.forEach(d => {
@@ -293,14 +251,16 @@ fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
 
       return function(f) {
         filter = f;
-        baseG.selectAll("path").attr("fill", d => fill(nameToAbbr[stateNames[d.id]], filter));
-        psmKKG.style("opacity", f === "ae" ? 0 : 1);
+        baseG.selectAll("path").attr("fill", d => fillColor(nameToAbbr[stateNames[d.id]], filter));
+        dotG.style("opacity", f === "ae" ? 0 : 1);
       };
     }
 
-    const update1 = makeMap("map1","tooltip1", AE_STATE_MAP, AE_COLORS, AE_LIGHTS);
-    const update2 = makeMap("map2","tooltip2", IAE_STATE_MAP, IAE_COLORS, IAE_LIGHTS);
-    buildFilters("filters1", update1);
-    buildFilters("filters2", update2);
+    const u1 = makeMap("map1","tooltip1", AE_STATE_MAP, AE_COLORS, AE_LIGHTS);
+    const u2 = makeMap("map2","tooltip2", IAE_STATE_MAP, IAE_COLORS, IAE_LIGHTS);
+    buildFilters("filters1", u1);
+    buildFilters("filters2", u2);
   });
 </script>
+</body>
+</html>
