@@ -1,0 +1,235 @@
+
+<style>
+  .map-container { padding: 1rem 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-secondary); }
+  .legend-swatch { width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0; }
+  svg text { font-family: var(--font-sans); font-size: 7px; pointer-events: none; }
+  .tooltip { position: absolute; background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 8px 12px; font-size: 12px; color: var(--color-text-primary); pointer-events: none; opacity: 0; transition: opacity 0.15s; max-width: 200px; z-index: 10; }
+  .state-path { cursor: pointer; stroke: #fff; stroke-width: 0.5; transition: opacity 0.15s; }
+  .state-path:hover { opacity: 0.75; stroke-width: 1.5; }
+  h2.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+  .filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .filter-btn { font-size: 12px; padding: 4px 10px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-secondary); cursor: pointer; }
+  .filter-btn.active { border-color: transparent; color: #fff; }
+</style>
+
+<h2 class="sr-only">US map showing AE territory assignments overlaid with PSM coverage areas for TalkingPoints sales team</h2>
+
+<div class="map-container" style="position:relative;">
+  <div class="filters" id="filters">
+    <button class="filter-btn active" data-filter="all" style="background:var(--color-background-secondary);color:var(--color-text-primary);border-color:var(--color-border-primary)">All</button>
+    <button class="filter-btn" data-filter="ae">AE only</button>
+    <button class="filter-btn" data-filter="psm">PSM only</button>
+  </div>
+  <div class="legend" id="legend"></div>
+  <div style="position:relative;">
+    <svg id="map" viewBox="0 0 960 600" style="width:100%;height:auto;display:block;"></svg>
+  </div>
+  <div class="tooltip" id="tooltip"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script>
+const AE_DATA = {
+  "Vanessa Tompkins": { states: ["all_tier7_area1"], tier7area: 1, color: "#534AB7", light: "#EEEDFE", dark: "#3C3489" },
+  "Whitney Cooper": { states: ["all_tier7_area2_plus_mql_west"], tier7area: 2, color: "#0F6E56", light: "#E1F5EE", dark: "#085041" },
+  "Adam Carruthers": { states: ["VA","NC","SC","GA","FL","AL","MS","DC","MD","AK","Alaska"], color: "#993C1D", light: "#FAECE7", dark: "#712B13" },
+  "Jake Stewart": { states: ["Northeast_non7"], color: "#993556", light: "#FBEAF0", dark: "#72243E" },
+  "Brett Wheeler": { states: ["MN","WI","IL","MI","TN","IN","OH","KY","WV","WA","OR","ID","WY"], color: "#185FA5", light: "#E6F1FB", dark: "#0C447C" },
+  "Chris Sorrell": { states: ["TX","OK","AR","LA","IA","NE","KS","MO","NM","NV","CO","UT","AZ"], color: "#854F0B", light: "#FAEEDA", dark: "#633806" }
+};
+
+const PSM_DATA = {
+  "Donnaly/Sujeiry": {
+    states: ["AL","AR","CT","DE","FL","GA","IN","KY","LA","ME","MD","MA","MS","MO","NE","NH","NJ","NY","NC","ND","PA","RI","SC","SD","TN","TX","VT","VA","WV","DC"],
+    pattern: "diagonal1"
+  },
+  "Kristin/Kaleigh": {
+    states: ["AZ","CA","AK","CO","HI","ID","IL","KS","MT","NV","NM","OR","UT","WA","WI","WY","IA","MN","MI","OH","OK"],
+    pattern: "diagonal2"
+  }
+};
+
+const STATE_TO_AE = {};
+
+const VANESSA_T7_A1 = ["ME","NH","VT","MA","RI","CT","NY","NJ","DE","PA","MD","DC","VA","NC","SC","GA","FL","AL","MS","TN","KY","WV","IN","OH","MI","WI","MN","ND","SD","NE","IA","MO","AR","LA","TX","OK","KS"];
+const WHITNEY_T7_A2 = ["CA","WA","OR","ID","MT","WY","NV","UT","CO","AZ","NM","AK","HI","IL"];
+const ADAM_STATES = ["VA","NC","SC","GA","FL","AL","MS","DC","MD","AK"];
+const JAKE_NE = ["ME","NH","VT","MA","RI","CT","NY","NJ","DE","PA"];
+const BRETT_STATES = ["MN","WI","IL","MI","TN","IN","OH","KY","WV","WA","OR","ID","WY"];
+const CHRIS_STATES = ["TX","OK","AR","LA","IA","NE","KS","MO","NM","NV","CO","UT","AZ"];
+const WHITNEY_MQL = ["CA","MT","HI","ND","SD","AK"];
+
+const AE_STATE_MAP = {};
+ADAM_STATES.forEach(s => AE_STATE_MAP[s] = "Adam Carruthers");
+JAKE_NE.forEach(s => AE_STATE_MAP[s] = "Jake Stewart");
+BRETT_STATES.forEach(s => AE_STATE_MAP[s] = "Brett Wheeler");
+CHRIS_STATES.forEach(s => AE_STATE_MAP[s] = "Chris Sorrell");
+WHITNEY_MQL.forEach(s => AE_STATE_MAP[s] = "Whitney Cooper");
+["CA","OR","WA","ID","MT","WY","NV","UT","CO","AZ","NM","HI"].forEach(s => {
+  if (!AE_STATE_MAP[s]) AE_STATE_MAP[s] = "Whitney Cooper";
+});
+VANESSA_T7_A1.forEach(s => {
+  if (!AE_STATE_MAP[s]) AE_STATE_MAP[s] = "Vanessa Tompkins";
+});
+
+const AE_COLORS = {
+  "Vanessa Tompkins": "#534AB7",
+  "Whitney Cooper": "#0F6E56",
+  "Adam Carruthers": "#993C1D",
+  "Jake Stewart": "#993556",
+  "Brett Wheeler": "#185FA5",
+  "Chris Sorrell": "#854F0B"
+};
+
+const AE_LIGHTS = {
+  "Vanessa Tompkins": "#EEEDFE",
+  "Whitney Cooper": "#E1F5EE",
+  "Adam Carruthers": "#FAECE7",
+  "Jake Stewart": "#FBEAF0",
+  "Brett Wheeler": "#E6F1FB",
+  "Chris Sorrell": "#FAEEDA"
+};
+
+const PSM_STATES_DS = new Set(["AL","AR","CT","DE","FL","GA","IN","KY","LA","ME","MD","MA","MS","MO","NE","NH","NJ","NY","NC","ND","PA","RI","SC","SD","TN","TX","VT","VA","WV","DC"]);
+const PSM_STATES_KK = new Set(["AZ","CA","AK","CO","HI","ID","IL","KS","MT","NV","NM","OR","UT","WA","WI","WY","IA","MN","MI","OH","OK"]);
+
+const svg = d3.select("#map");
+const tooltip = document.getElementById("tooltip");
+let currentFilter = "all";
+
+svg.append("defs").html(`
+  <pattern id="pat-ds" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+    <line x1="0" y1="0" x2="0" y2="6" stroke="#D4537E" stroke-width="1.5" stroke-opacity="0.55"/>
+  </pattern>
+  <pattern id="pat-kk" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(-45)">
+    <line x1="0" y1="0" x2="0" y2="6" stroke="#1D9E75" stroke-width="1.5" stroke-opacity="0.55"/>
+  </pattern>
+`);
+
+const statesGroup = svg.append("g").attr("id","states-base");
+const psmGroup = svg.append("g").attr("id","psm-overlay");
+const labelsGroup = svg.append("g").attr("id","labels");
+
+Promise.all([
+  fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json").then(r=>r.json())
+]).then(([us]) => {
+  const states = topojson.feature(us, us.objects.states);
+  const projection = d3.geoAlbersUsa().scale(1200).translate([480,300]);
+  const path = d3.geoPath().projection(projection);
+
+  const stateNames = {};
+  us.objects.states.geometries.forEach(g => {
+    stateNames[g.id] = g.properties.name;
+  });
+
+  const nameToAbbr = {
+    "Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO",
+    "Connecticut":"CT","Delaware":"DE","Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID",
+    "Illinois":"IL","Indiana":"IN","Iowa":"IA","Kansas":"KS","Kentucky":"KY","Louisiana":"LA",
+    "Maine":"ME","Maryland":"MD","Massachusetts":"MA","Michigan":"MI","Minnesota":"MN","Mississippi":"MS",
+    "Missouri":"MO","Montana":"MT","Nebraska":"NE","Nevada":"NV","New Hampshire":"NH","New Jersey":"NJ",
+    "New Mexico":"NM","New York":"NY","North Carolina":"NC","North Dakota":"ND","Ohio":"OH","Oklahoma":"OK",
+    "Oregon":"OR","Pennsylvania":"PA","Rhode Island":"RI","South Carolina":"SC","South Dakota":"SD",
+    "Tennessee":"TN","Texas":"TX","Utah":"UT","Vermont":"VT","Virginia":"VA","Washington":"WA",
+    "West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY","District of Columbia":"DC"
+  };
+
+  statesGroup.selectAll("path")
+    .data(states.features)
+    .join("path")
+    .attr("class","state-path")
+    .attr("d", path)
+    .attr("fill", d => {
+      const abbr = nameToAbbr[stateNames[d.id]];
+      const ae = AE_STATE_MAP[abbr];
+      return ae ? AE_LIGHTS[ae] : "#e8e8e0";
+    })
+    .attr("stroke","#fff")
+    .attr("stroke-width","0.5")
+    .on("mousemove", function(event, d) {
+      const name = stateNames[d.id];
+      const abbr = nameToAbbr[name];
+      const ae = AE_STATE_MAP[abbr] || "Unassigned";
+      let psm = "—";
+      if (PSM_STATES_DS.has(abbr)) psm = "Donnaly/Sujeiry";
+      else if (PSM_STATES_KK.has(abbr)) psm = "Kristin/Kaleigh";
+      const rect = document.getElementById("map").getBoundingClientRect();
+      const container = document.querySelector(".map-container").getBoundingClientRect();
+      tooltip.innerHTML = `<strong style="font-size:13px">${name} (${abbr||""})</strong><br><span style="color:var(--color-text-secondary);font-size:11px">AE: ${ae}</span><br><span style="color:var(--color-text-secondary);font-size:11px">PSM: ${psm}</span>`;
+      tooltip.style.left = (event.clientX - container.left + 10) + "px";
+      tooltip.style.top = (event.clientY - container.top - 10) + "px";
+      tooltip.style.opacity = "1";
+    })
+    .on("mouseleave", () => { tooltip.style.opacity = "0"; });
+
+  psmGroup.selectAll(".psm-ds")
+    .data(states.features.filter(d => PSM_STATES_DS.has(nameToAbbr[stateNames[d.id]])))
+    .join("path")
+    .attr("class","state-path psm-ds")
+    .attr("d", path)
+    .attr("fill", "url(#pat-ds)")
+    .attr("stroke","none")
+    .style("pointer-events","none");
+
+  psmGroup.selectAll(".psm-kk")
+    .data(states.features.filter(d => PSM_STATES_KK.has(nameToAbbr[stateNames[d.id]])))
+    .join("path")
+    .attr("class","state-path psm-kk")
+    .attr("d", path)
+    .attr("fill", "url(#pat-kk)")
+    .attr("stroke","none")
+    .style("pointer-events","none");
+
+  states.features.forEach(d => {
+    const centroid = path.centroid(d);
+    if (!centroid || isNaN(centroid[0])) return;
+    const abbr = nameToAbbr[stateNames[d.id]];
+    if (!abbr || abbr === "DC") return;
+    labelsGroup.append("text")
+      .attr("x", centroid[0])
+      .attr("y", centroid[1]+2.5)
+      .attr("text-anchor","middle")
+      .attr("fill","#666")
+      .attr("font-size","6px")
+      .text(abbr);
+  });
+
+  buildLegend();
+  setupFilters();
+});
+
+function buildLegend() {
+  const leg = document.getElementById("legend");
+  const aes = Object.entries(AE_COLORS);
+  let html = aes.map(([name, color]) =>
+    `<div class="legend-item"><div class="legend-swatch" style="background:${AE_LIGHTS[name]};border:1.5px solid ${color}"></div><span>${name} (AE)</span></div>`
+  ).join("");
+  html += `<div class="legend-item"><div class="legend-swatch" style="background:repeating-linear-gradient(45deg,#fff,#fff 3px,rgba(212,83,126,0.4) 3px,rgba(212,83,126,0.4) 4.5px)"></div><span>Donnaly/Sujeiry (PSM)</span></div>`;
+  html += `<div class="legend-item"><div class="legend-swatch" style="background:repeating-linear-gradient(-45deg,#fff,#fff 3px,rgba(29,158,117,0.4) 3px,rgba(29,158,117,0.4) 4.5px)"></div><span>Kristin/Kaleigh (PSM)</span></div>`;
+  leg.innerHTML = html;
+}
+
+function setupFilters() {
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", function() {
+      currentFilter = this.dataset.filter;
+      document.querySelectorAll(".filter-btn").forEach(b => {
+        b.classList.remove("active");
+        b.style.background = "";
+        b.style.color = "";
+        b.style.borderColor = "";
+      });
+      this.classList.add("active");
+      this.style.background = "var(--color-background-secondary)";
+      this.style.color = "var(--color-text-primary)";
+      this.style.borderColor = "var(--color-border-primary)";
+
+      d3.select("#states-base").style("opacity", currentFilter === "psm" ? 0.2 : 1);
+      d3.select("#psm-overlay").style("opacity", currentFilter === "ae" ? 0 : 1);
+    });
+  });
+}
+</script>
