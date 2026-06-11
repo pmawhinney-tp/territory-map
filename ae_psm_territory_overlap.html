@@ -11,14 +11,27 @@
   h2.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
   .filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
   .filter-btn { font-size: 12px; padding: 4px 10px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-secondary); cursor: pointer; }
-  .filter-btn.active { border-color: transparent; color: #fff; }
+  .alignment-section { margin-top: 2rem; border-top: 0.5px solid var(--color-border-tertiary); padding-top: 1.5rem; }
+  .alignment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }
+  .align-card { background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; }
+  .align-card-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 8px; }
+  .align-card-subtitle { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 10px; }
+  .ae-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 3px 8px; border-radius: var(--border-radius-md); margin: 2px; }
+  .ae-list { display: flex; flex-wrap: wrap; gap: 4px; }
+  .section-label { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .ae-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 0.5px solid var(--color-border-tertiary); font-size: 13px; }
+  .ae-row:last-child { border-bottom: none; }
+  .ae-name { font-weight: 500; color: var(--color-text-primary); display: flex; align-items: center; gap: 8px; }
+  .ae-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .psm-tag { font-size: 11px; color: var(--color-text-secondary); background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 2px 8px; }
+  .psm-tags { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
 </style>
 
-<h2 class="sr-only">US map showing AE territory assignments overlaid with PSM coverage areas for TalkingPoints sales team</h2>
+<h2 class="sr-only">US map and alignment table showing AE territory assignments overlaid with PSM coverage for TalkingPoints sales team</h2>
 
 <div class="map-container" style="position:relative;">
   <div class="filters" id="filters">
-    <button class="filter-btn active" data-filter="all" style="background:var(--color-background-secondary);color:var(--color-text-primary);border-color:var(--color-border-primary)">All</button>
+    <button class="filter-btn" data-filter="all">All</button>
     <button class="filter-btn" data-filter="ae">AE only</button>
     <button class="filter-btn" data-filter="psm">PSM only</button>
   </div>
@@ -27,6 +40,25 @@
     <svg id="map" viewBox="0 0 960 600" style="width:100%;height:auto;display:block;"></svg>
   </div>
   <div class="tooltip" id="tooltip"></div>
+</div>
+
+<div class="alignment-section">
+  <p class="section-label">PSM → AE alignment</p>
+  <div class="alignment-grid">
+    <div class="align-card">
+      <div class="align-card-title">Donnaly / Sujeiry</div>
+      <div class="align-card-subtitle">AEs in their territory</div>
+      <div class="ae-list" id="psm-ds-aes"></div>
+    </div>
+    <div class="align-card">
+      <div class="align-card-title">Kristin / Kaleigh</div>
+      <div class="align-card-subtitle">AEs in their territory</div>
+      <div class="ae-list" id="psm-kk-aes"></div>
+    </div>
+  </div>
+
+  <p class="section-label" style="margin-top:1.5rem;">AE → PSM alignment</p>
+  <div id="ae-psm-list"></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
@@ -68,132 +100,181 @@ WHITNEY_MQL.forEach(s => AE_STATE_MAP[s] = "Whitney Cooper");
 ["CA","OR","WA","ID","MT","WY","NV","UT","CO","AZ","NM","HI"].forEach(s => { if (!AE_STATE_MAP[s]) AE_STATE_MAP[s] = "Whitney Cooper"; });
 VANESSA_T7_A1.forEach(s => { if (!AE_STATE_MAP[s]) AE_STATE_MAP[s] = "Vanessa Tompkins"; });
 
+const AE_PSM_OVERRIDE = {
+  "Vanessa Tompkins": ["Donnaly/Sujeiry", "Kristin/Kaleigh"],
+  "Whitney Cooper": ["Donnaly/Sujeiry", "Kristin/Kaleigh"]
+};
+
+function getPSMsForAE(aeName) {
+  if (AE_PSM_OVERRIDE[aeName]) return AE_PSM_OVERRIDE[aeName];
+  const psms = new Set();
+  Object.entries(AE_STATE_MAP).forEach(([state, ae]) => {
+    if (ae === aeName) {
+      if (PSM_STATES_DS.has(state)) psms.add("Donnaly/Sujeiry");
+      if (PSM_STATES_KK.has(state)) psms.add("Kristin/Kaleigh");
+    }
+  });
+  return [...psms];
+}
+
+function getAEsForPSM(psmStates) {
+  const aes = new Set();
+  psmStates.forEach(state => {
+    if (AE_STATE_MAP[state]) aes.add(AE_STATE_MAP[state]);
+  });
+  return [...aes];
+}
+
+function buildAlignmentSections() {
+  const dsAEs = getAEsForPSM([...PSM_STATES_DS]);
+  const kkAEs = getAEsForPSM([...PSM_STATES_KK]);
+
+  document.getElementById("psm-ds-aes").innerHTML = dsAEs.map(ae =>
+    `<span class="ae-chip" style="background:${AE_LIGHTS[ae]};border:1px solid ${AE_COLORS[ae]};color:${AE_COLORS[ae]}">${ae}</span>`
+  ).join("");
+
+  document.getElementById("psm-kk-aes").innerHTML = kkAEs.map(ae =>
+    `<span class="ae-chip" style="background:${AE_LIGHTS[ae]};border:1px solid ${AE_COLORS[ae]};color:${AE_COLORS[ae]}">${ae}</span>`
+  ).join("");
+
+  const aeList = document.getElementById("ae-psm-list");
+  aeList.innerHTML = Object.keys(AE_COLORS).map(ae => {
+    const psms = getPSMsForAE(ae);
+    return `<div class="ae-row">
+      <div class="ae-name">
+        <div class="ae-dot" style="background:${AE_COLORS[ae]}"></div>
+        ${ae}
+      </div>
+      <div class="psm-tags">${psms.map(p => `<span class="psm-tag">${p}</span>`).join("")}</div>
+    </div>`;
+  }).join("");
+}
+
+let currentFilter = "all";
+const nameToAbbr = {
+  "Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO",
+  "Connecticut":"CT","Delaware":"DE","Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID",
+  "Illinois":"IL","Indiana":"IN","Iowa":"IA","Kansas":"KS","Kentucky":"KY","Louisiana":"LA",
+  "Maine":"ME","Maryland":"MD","Massachusetts":"MA","Michigan":"MI","Minnesota":"MN","Mississippi":"MS",
+  "Missouri":"MO","Montana":"MT","Nebraska":"NE","Nevada":"NV","New Hampshire":"NH","New Jersey":"NJ",
+  "New Mexico":"NM","New York":"NY","North Carolina":"NC","North Dakota":"ND","Ohio":"OH","Oklahoma":"OK",
+  "Oregon":"OR","Pennsylvania":"PA","Rhode Island":"RI","South Carolina":"SC","South Dakota":"SD",
+  "Tennessee":"TN","Texas":"TX","Utah":"UT","Vermont":"VT","Virginia":"VA","Washington":"WA",
+  "West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY","District of Columbia":"DC"
+};
+
 const svg = d3.select("#map");
 const tooltip = document.getElementById("tooltip");
 
 svg.append("defs").html(`
-  <pattern id="pat-ds" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
-    <line x1="0" y1="0" x2="0" y2="6" stroke="#D4537E" stroke-width="2" stroke-opacity="0.6"/>
-  </pattern>
   <pattern id="pat-kk" patternUnits="userSpaceOnUse" width="7" height="7">
-    <circle cx="3.5" cy="3.5" r="1.8" fill="#1D9E75" fill-opacity="0.65"/>
+    <circle cx="3.5" cy="3.5" r="1.8" fill="#888780" fill-opacity="0.7"/>
   </pattern>
 `);
 
 const statesGroup = svg.append("g").attr("id","states-base");
-const psmGroup = svg.append("g").attr("id","psm-overlay");
+const psmKKGroup = svg.append("g").attr("id","psm-kk-overlay");
 const labelsGroup = svg.append("g").attr("id","labels");
 
-Promise.all([
-  fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json").then(r=>r.json())
-]).then(([us]) => {
-  const states = topojson.feature(us, us.objects.states);
-  const projection = d3.geoAlbersUsa().scale(1200).translate([480,300]);
-  const path = d3.geoPath().projection(projection);
-  const stateNames = {};
-  us.objects.states.geometries.forEach(g => { stateNames[g.id] = g.properties.name; });
-  const nameToAbbr = {
-    "Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO",
-    "Connecticut":"CT","Delaware":"DE","Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID",
-    "Illinois":"IL","Indiana":"IN","Iowa":"IA","Kansas":"KS","Kentucky":"KY","Louisiana":"LA",
-    "Maine":"ME","Maryland":"MD","Massachusetts":"MA","Michigan":"MI","Minnesota":"MN","Mississippi":"MS",
-    "Missouri":"MO","Montana":"MT","Nebraska":"NE","Nevada":"NV","New Hampshire":"NH","New Jersey":"NJ",
-    "New Mexico":"NM","New York":"NY","North Carolina":"NC","North Dakota":"ND","Ohio":"OH","Oklahoma":"OK",
-    "Oregon":"OR","Pennsylvania":"PA","Rhode Island":"RI","South Carolina":"SC","South Dakota":"SD",
-    "Tennessee":"TN","Texas":"TX","Utah":"UT","Vermont":"VT","Virginia":"VA","Washington":"WA",
-    "West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY","District of Columbia":"DC"
-  };
+function getStateFill(abbr, filter) {
+  if (filter === "psm") return "#e8e8e0";
+  const ae = AE_STATE_MAP[abbr];
+  return ae ? AE_LIGHTS[ae] : "#e8e8e0";
+}
 
-  statesGroup.selectAll("path")
-    .data(states.features)
-    .join("path")
-    .attr("class","state-path")
-    .attr("d", path)
-    .attr("fill", d => {
-      const abbr = nameToAbbr[stateNames[d.id]];
-      const ae = AE_STATE_MAP[abbr];
-      return ae ? AE_LIGHTS[ae] : "#e8e8e0";
-    })
-    .attr("stroke","#fff")
-    .attr("stroke-width","0.5")
-    .on("mousemove", function(event, d) {
-      const name = stateNames[d.id];
-      const abbr = nameToAbbr[name];
-      const ae = AE_STATE_MAP[abbr] || "Unassigned";
-      let psm = "—";
-      if (PSM_STATES_DS.has(abbr)) psm = "Donnaly/Sujeiry";
-      else if (PSM_STATES_KK.has(abbr)) psm = "Kristin/Kaleigh";
-      const container = document.querySelector(".map-container").getBoundingClientRect();
-      tooltip.innerHTML = `<strong style="font-size:13px">${name} (${abbr||""})</strong><br><span style="color:var(--color-text-secondary);font-size:11px">AE: ${ae}</span><br><span style="color:var(--color-text-secondary);font-size:11px">PSM: ${psm}</span>`;
-      tooltip.style.left = (event.clientX - container.left + 10) + "px";
-      tooltip.style.top = (event.clientY - container.top - 10) + "px";
-      tooltip.style.opacity = "1";
-    })
-    .on("mouseleave", () => { tooltip.style.opacity = "0"; });
-
-  psmGroup.selectAll(".psm-ds")
-    .data(states.features.filter(d => PSM_STATES_DS.has(nameToAbbr[stateNames[d.id]])))
-    .join("path")
-    .attr("class","state-path psm-ds")
-    .attr("d", path)
-    .attr("fill","url(#pat-ds)")
-    .attr("stroke","none")
-    .style("pointer-events","none");
-
-  psmGroup.selectAll(".psm-kk")
-    .data(states.features.filter(d => PSM_STATES_KK.has(nameToAbbr[stateNames[d.id]])))
-    .join("path")
-    .attr("class","state-path psm-kk")
-    .attr("d", path)
-    .attr("fill","url(#pat-kk)")
-    .attr("stroke","none")
-    .style("pointer-events","none");
-
-  states.features.forEach(d => {
-    const centroid = path.centroid(d);
-    if (!centroid || isNaN(centroid[0])) return;
-    const abbr = nameToAbbr[stateNames[d.id]];
-    if (!abbr || abbr === "DC") return;
-    labelsGroup.append("text")
-      .attr("x", centroid[0])
-      .attr("y", centroid[1]+2.5)
-      .attr("text-anchor","middle")
-      .attr("fill","#666")
-      .attr("font-size","6px")
-      .text(abbr);
+function setActiveBtn(filter) {
+  document.querySelectorAll(".filter-btn").forEach(b => {
+    const active = b.dataset.filter === filter;
+    b.style.background = active ? "var(--color-background-secondary)" : "var(--color-background-primary)";
+    b.style.color = active ? "var(--color-text-primary)" : "var(--color-text-secondary)";
+    b.style.borderColor = active ? "var(--color-border-primary)" : "var(--color-border-secondary)";
+    b.style.fontWeight = active ? "500" : "400";
   });
+}
 
-  buildLegend();
-  setupFilters();
-});
+fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
+  .then(r => r.json())
+  .then(us => {
+    const states = topojson.feature(us, us.objects.states);
+    const projection = d3.geoAlbersUsa().scale(1200).translate([480,300]);
+    const path = d3.geoPath().projection(projection);
+    const stateNames = {};
+    us.objects.states.geometries.forEach(g => { stateNames[g.id] = g.properties.name; });
+
+    statesGroup.selectAll("path")
+      .data(states.features)
+      .join("path")
+      .attr("class","state-path")
+      .attr("d", path)
+      .attr("fill", d => {
+        const abbr = nameToAbbr[stateNames[d.id]];
+        return getStateFill(abbr, currentFilter);
+      })
+      .attr("stroke","#fff")
+      .attr("stroke-width","0.5")
+      .on("mousemove", function(event, d) {
+        const name = stateNames[d.id];
+        const abbr = nameToAbbr[name];
+        const ae = AE_STATE_MAP[abbr] || "Unassigned";
+        let psm = "—";
+        if (PSM_STATES_DS.has(abbr)) psm = "Donnaly/Sujeiry";
+        else if (PSM_STATES_KK.has(abbr)) psm = "Kristin/Kaleigh";
+        const container = document.querySelector(".map-container").getBoundingClientRect();
+        tooltip.innerHTML = `<strong style="font-size:13px">${name} (${abbr||""})</strong><br><span style="color:var(--color-text-secondary);font-size:11px">AE: ${ae}</span><br><span style="color:var(--color-text-secondary);font-size:11px">PSM: ${psm}</span>`;
+        tooltip.style.left = (event.clientX - container.left + 10) + "px";
+        tooltip.style.top = (event.clientY - container.top - 10) + "px";
+        tooltip.style.opacity = "1";
+      })
+      .on("mouseleave", () => { tooltip.style.opacity = "0"; });
+
+    psmKKGroup.selectAll(".psm-kk")
+      .data(states.features.filter(d => PSM_STATES_KK.has(nameToAbbr[stateNames[d.id]])))
+      .join("path")
+      .attr("class","state-path psm-kk")
+      .attr("d", path)
+      .attr("fill","url(#pat-kk)")
+      .attr("stroke","none")
+      .style("pointer-events","none");
+
+    states.features.forEach(d => {
+      const centroid = path.centroid(d);
+      if (!centroid || isNaN(centroid[0])) return;
+      const abbr = nameToAbbr[stateNames[d.id]];
+      if (!abbr || abbr === "DC") return;
+      labelsGroup.append("text")
+        .attr("x", centroid[0])
+        .attr("y", centroid[1]+2.5)
+        .attr("text-anchor","middle")
+        .attr("fill","#666")
+        .attr("font-size","6px")
+        .text(abbr);
+    });
+
+    buildLegend();
+    buildAlignmentSections();
+    setActiveBtn("all");
+
+    document.querySelectorAll(".filter-btn").forEach(btn => {
+      btn.addEventListener("click", function() {
+        currentFilter = this.dataset.filter;
+        setActiveBtn(currentFilter);
+        statesGroup.selectAll("path")
+          .attr("fill", d => {
+            const abbr = nameToAbbr[stateNames[d.id]];
+            return getStateFill(abbr, currentFilter);
+          });
+        psmKKGroup.style("opacity", currentFilter === "ae" ? 0 : 1);
+      });
+    });
+  });
 
 function buildLegend() {
   const leg = document.getElementById("legend");
   let html = Object.entries(AE_COLORS).map(([name, color]) =>
     `<div class="legend-item"><div class="legend-swatch" style="background:${AE_LIGHTS[name]};border:1.5px solid ${color}"></div><span>${name} (AE)</span></div>`
   ).join("");
-  html += `<div class="legend-item"><div class="legend-swatch" style="background:repeating-linear-gradient(45deg,#fff,#fff 2px,rgba(212,83,126,0.6) 2px,rgba(212,83,126,0.6) 4px)"></div><span>Donnaly/Sujeiry (PSM)</span></div>`;
-  html += `<div class="legend-item"><div class="legend-swatch" style="background-color:#fff;background-image:radial-gradient(circle,rgba(29,158,117,0.65) 1.8px,transparent 1.8px);background-size:7px 7px"></div><span>Kristin/Kaleigh (PSM)</span></div>`;
+  html += `<div class="legend-item"><div class="legend-swatch" style="background:#fff;border:0.5px solid #ccc;"></div><span>Donnaly/Sujeiry (PSM)</span></div>`;
+  html += `<div class="legend-item"><div class="legend-swatch" style="background-color:#fff;background-image:radial-gradient(circle,rgba(136,135,128,0.7) 1.8px,transparent 1.8px);background-size:7px 7px;border:0.5px solid #ccc;"></div><span>Kristin/Kaleigh (PSM)</span></div>`;
   leg.innerHTML = html;
-}
-
-function setupFilters() {
-  document.querySelectorAll(".filter-btn").forEach(btn => {
-    btn.addEventListener("click", function() {
-      document.querySelectorAll(".filter-btn").forEach(b => {
-        b.classList.remove("active");
-        b.style.background = "";
-        b.style.color = "";
-        b.style.borderColor = "";
-      });
-      this.classList.add("active");
-      this.style.background = "var(--color-background-secondary)";
-      this.style.color = "var(--color-text-primary)";
-      this.style.borderColor = "var(--color-border-primary)";
-      const f = this.dataset.filter;
-      d3.select("#states-base").style("opacity", f === "psm" ? 0.2 : 1);
-      d3.select("#psm-overlay").style("opacity", f === "ae" ? 0 : 1);
-    });
-  });
 }
 </script>
