@@ -32,49 +32,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <script>
-const AE_DATA = {
-  "Vanessa Tompkins": { states: ["all_tier7_area1"], tier7area: 1, color: "#534AB7", light: "#EEEDFE", dark: "#3C3489" },
-  "Whitney Cooper": { states: ["all_tier7_area2_plus_mql_west"], tier7area: 2, color: "#0F6E56", light: "#E1F5EE", dark: "#085041" },
-  "Adam Carruthers": { states: ["VA","NC","SC","GA","FL","AL","MS","DC","MD","AK","Alaska"], color: "#993C1D", light: "#FAECE7", dark: "#712B13" },
-  "Jake Stewart": { states: ["Northeast_non7"], color: "#993556", light: "#FBEAF0", dark: "#72243E" },
-  "Brett Wheeler": { states: ["MN","WI","IL","MI","TN","IN","OH","KY","WV","WA","OR","ID","WY"], color: "#185FA5", light: "#E6F1FB", dark: "#0C447C" },
-  "Chris Sorrell": { states: ["TX","OK","AR","LA","IA","NE","KS","MO","NM","NV","CO","UT","AZ"], color: "#854F0B", light: "#FAEEDA", dark: "#633806" }
-};
-
-const PSM_DATA = {
-  "Donnaly/Sujeiry": {
-    states: ["AL","AR","CT","DE","FL","GA","IN","KY","LA","ME","MD","MA","MS","MO","NE","NH","NJ","NY","NC","ND","PA","RI","SC","SD","TN","TX","VT","VA","WV","DC"],
-    pattern: "diagonal1"
-  },
-  "Kristin/Kaleigh": {
-    states: ["AZ","CA","AK","CO","HI","ID","IL","KS","MT","NV","NM","OR","UT","WA","WI","WY","IA","MN","MI","OH","OK"],
-    pattern: "diagonal2"
-  }
-};
-
-const STATE_TO_AE = {};
-
-const VANESSA_T7_A1 = ["ME","NH","VT","MA","RI","CT","NY","NJ","DE","PA","MD","DC","VA","NC","SC","GA","FL","AL","MS","TN","KY","WV","IN","OH","MI","WI","MN","ND","SD","NE","IA","MO","AR","LA","TX","OK","KS"];
-const WHITNEY_T7_A2 = ["CA","WA","OR","ID","MT","WY","NV","UT","CO","AZ","NM","AK","HI","IL"];
-const ADAM_STATES = ["VA","NC","SC","GA","FL","AL","MS","DC","MD","AK"];
-const JAKE_NE = ["ME","NH","VT","MA","RI","CT","NY","NJ","DE","PA"];
-const BRETT_STATES = ["MN","WI","IL","MI","TN","IN","OH","KY","WV","WA","OR","ID","WY"];
-const CHRIS_STATES = ["TX","OK","AR","LA","IA","NE","KS","MO","NM","NV","CO","UT","AZ"];
-const WHITNEY_MQL = ["CA","MT","HI","ND","SD","AK"];
-
-const AE_STATE_MAP = {};
-ADAM_STATES.forEach(s => AE_STATE_MAP[s] = "Adam Carruthers");
-JAKE_NE.forEach(s => AE_STATE_MAP[s] = "Jake Stewart");
-BRETT_STATES.forEach(s => AE_STATE_MAP[s] = "Brett Wheeler");
-CHRIS_STATES.forEach(s => AE_STATE_MAP[s] = "Chris Sorrell");
-WHITNEY_MQL.forEach(s => AE_STATE_MAP[s] = "Whitney Cooper");
-["CA","OR","WA","ID","MT","WY","NV","UT","CO","AZ","NM","HI"].forEach(s => {
-  if (!AE_STATE_MAP[s]) AE_STATE_MAP[s] = "Whitney Cooper";
-});
-VANESSA_T7_A1.forEach(s => {
-  if (!AE_STATE_MAP[s]) AE_STATE_MAP[s] = "Vanessa Tompkins";
-});
-
 const AE_COLORS = {
   "Vanessa Tompkins": "#534AB7",
   "Whitney Cooper": "#0F6E56",
@@ -83,7 +40,6 @@ const AE_COLORS = {
   "Brett Wheeler": "#185FA5",
   "Chris Sorrell": "#854F0B"
 };
-
 const AE_LIGHTS = {
   "Vanessa Tompkins": "#EEEDFE",
   "Whitney Cooper": "#E1F5EE",
@@ -96,16 +52,31 @@ const AE_LIGHTS = {
 const PSM_STATES_DS = new Set(["AL","AR","CT","DE","FL","GA","IN","KY","LA","ME","MD","MA","MS","MO","NE","NH","NJ","NY","NC","ND","PA","RI","SC","SD","TN","TX","VT","VA","WV","DC"]);
 const PSM_STATES_KK = new Set(["AZ","CA","AK","CO","HI","ID","IL","KS","MT","NV","NM","OR","UT","WA","WI","WY","IA","MN","MI","OH","OK"]);
 
+const ADAM_STATES = ["VA","NC","SC","GA","FL","AL","MS","DC","MD","AK"];
+const JAKE_NE = ["ME","NH","VT","MA","RI","CT","NY","NJ","DE","PA"];
+const BRETT_STATES = ["MN","WI","IL","MI","TN","IN","OH","KY","WV","WA","OR","ID","WY"];
+const CHRIS_STATES = ["TX","OK","AR","LA","IA","NE","KS","MO","NM","NV","CO","UT","AZ"];
+const WHITNEY_MQL = ["CA","MT","HI","ND","SD","AK"];
+const VANESSA_T7_A1 = ["ME","NH","VT","MA","RI","CT","NY","NJ","DE","PA","MD","DC","VA","NC","SC","GA","FL","AL","MS","TN","KY","WV","IN","OH","MI","WI","MN","ND","SD","NE","IA","MO","AR","LA","TX","OK","KS"];
+
+const AE_STATE_MAP = {};
+ADAM_STATES.forEach(s => AE_STATE_MAP[s] = "Adam Carruthers");
+JAKE_NE.forEach(s => AE_STATE_MAP[s] = "Jake Stewart");
+BRETT_STATES.forEach(s => AE_STATE_MAP[s] = "Brett Wheeler");
+CHRIS_STATES.forEach(s => AE_STATE_MAP[s] = "Chris Sorrell");
+WHITNEY_MQL.forEach(s => AE_STATE_MAP[s] = "Whitney Cooper");
+["CA","OR","WA","ID","MT","WY","NV","UT","CO","AZ","NM","HI"].forEach(s => { if (!AE_STATE_MAP[s]) AE_STATE_MAP[s] = "Whitney Cooper"; });
+VANESSA_T7_A1.forEach(s => { if (!AE_STATE_MAP[s]) AE_STATE_MAP[s] = "Vanessa Tompkins"; });
+
 const svg = d3.select("#map");
 const tooltip = document.getElementById("tooltip");
-let currentFilter = "all";
 
 svg.append("defs").html(`
   <pattern id="pat-ds" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
-    <line x1="0" y1="0" x2="0" y2="6" stroke="#D4537E" stroke-width="1.5" stroke-opacity="0.55"/>
+    <line x1="0" y1="0" x2="0" y2="6" stroke="#D4537E" stroke-width="2" stroke-opacity="0.6"/>
   </pattern>
-  <pattern id="pat-kk" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(-45)">
-    <line x1="0" y1="0" x2="0" y2="6" stroke="#1D9E75" stroke-width="1.5" stroke-opacity="0.55"/>
+  <pattern id="pat-kk" patternUnits="userSpaceOnUse" width="7" height="7">
+    <circle cx="3.5" cy="3.5" r="1.8" fill="#1D9E75" fill-opacity="0.65"/>
   </pattern>
 `);
 
@@ -119,12 +90,8 @@ Promise.all([
   const states = topojson.feature(us, us.objects.states);
   const projection = d3.geoAlbersUsa().scale(1200).translate([480,300]);
   const path = d3.geoPath().projection(projection);
-
   const stateNames = {};
-  us.objects.states.geometries.forEach(g => {
-    stateNames[g.id] = g.properties.name;
-  });
-
+  us.objects.states.geometries.forEach(g => { stateNames[g.id] = g.properties.name; });
   const nameToAbbr = {
     "Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO",
     "Connecticut":"CT","Delaware":"DE","Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID",
@@ -156,7 +123,6 @@ Promise.all([
       let psm = "—";
       if (PSM_STATES_DS.has(abbr)) psm = "Donnaly/Sujeiry";
       else if (PSM_STATES_KK.has(abbr)) psm = "Kristin/Kaleigh";
-      const rect = document.getElementById("map").getBoundingClientRect();
       const container = document.querySelector(".map-container").getBoundingClientRect();
       tooltip.innerHTML = `<strong style="font-size:13px">${name} (${abbr||""})</strong><br><span style="color:var(--color-text-secondary);font-size:11px">AE: ${ae}</span><br><span style="color:var(--color-text-secondary);font-size:11px">PSM: ${psm}</span>`;
       tooltip.style.left = (event.clientX - container.left + 10) + "px";
@@ -170,7 +136,7 @@ Promise.all([
     .join("path")
     .attr("class","state-path psm-ds")
     .attr("d", path)
-    .attr("fill", "url(#pat-ds)")
+    .attr("fill","url(#pat-ds)")
     .attr("stroke","none")
     .style("pointer-events","none");
 
@@ -179,7 +145,7 @@ Promise.all([
     .join("path")
     .attr("class","state-path psm-kk")
     .attr("d", path)
-    .attr("fill", "url(#pat-kk)")
+    .attr("fill","url(#pat-kk)")
     .attr("stroke","none")
     .style("pointer-events","none");
 
@@ -203,19 +169,17 @@ Promise.all([
 
 function buildLegend() {
   const leg = document.getElementById("legend");
-  const aes = Object.entries(AE_COLORS);
-  let html = aes.map(([name, color]) =>
+  let html = Object.entries(AE_COLORS).map(([name, color]) =>
     `<div class="legend-item"><div class="legend-swatch" style="background:${AE_LIGHTS[name]};border:1.5px solid ${color}"></div><span>${name} (AE)</span></div>`
   ).join("");
-  html += `<div class="legend-item"><div class="legend-swatch" style="background:repeating-linear-gradient(45deg,#fff,#fff 3px,rgba(212,83,126,0.4) 3px,rgba(212,83,126,0.4) 4.5px)"></div><span>Donnaly/Sujeiry (PSM)</span></div>`;
-  html += `<div class="legend-item"><div class="legend-swatch" style="background:repeating-linear-gradient(-45deg,#fff,#fff 3px,rgba(29,158,117,0.4) 3px,rgba(29,158,117,0.4) 4.5px)"></div><span>Kristin/Kaleigh (PSM)</span></div>`;
+  html += `<div class="legend-item"><div class="legend-swatch" style="background:repeating-linear-gradient(45deg,#fff,#fff 2px,rgba(212,83,126,0.6) 2px,rgba(212,83,126,0.6) 4px)"></div><span>Donnaly/Sujeiry (PSM)</span></div>`;
+  html += `<div class="legend-item"><div class="legend-swatch" style="background-color:#fff;background-image:radial-gradient(circle,rgba(29,158,117,0.65) 1.8px,transparent 1.8px);background-size:7px 7px"></div><span>Kristin/Kaleigh (PSM)</span></div>`;
   leg.innerHTML = html;
 }
 
 function setupFilters() {
   document.querySelectorAll(".filter-btn").forEach(btn => {
     btn.addEventListener("click", function() {
-      currentFilter = this.dataset.filter;
       document.querySelectorAll(".filter-btn").forEach(b => {
         b.classList.remove("active");
         b.style.background = "";
@@ -226,9 +190,9 @@ function setupFilters() {
       this.style.background = "var(--color-background-secondary)";
       this.style.color = "var(--color-text-primary)";
       this.style.borderColor = "var(--color-border-primary)";
-
-      d3.select("#states-base").style("opacity", currentFilter === "psm" ? 0.2 : 1);
-      d3.select("#psm-overlay").style("opacity", currentFilter === "ae" ? 0 : 1);
+      const f = this.dataset.filter;
+      d3.select("#states-base").style("opacity", f === "psm" ? 0.2 : 1);
+      d3.select("#psm-overlay").style("opacity", f === "ae" ? 0 : 1);
     });
   });
 }
