@@ -1,71 +1,67 @@
 
 <style>
-  .map-container { padding: 1rem 0; }
+  .section-label { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .map-title { font-size: 15px; font-weight: 500; color: var(--color-text-primary); margin: 0 0 8px; }
   .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
   .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-secondary); }
   .legend-swatch { width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0; }
-  svg text { font-family: var(--font-sans); font-size: 7px; pointer-events: none; }
-  .tooltip { position: absolute; background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 8px 12px; font-size: 12px; color: var(--color-text-primary); pointer-events: none; opacity: 0; transition: opacity 0.15s; max-width: 200px; z-index: 10; }
-  .state-path { cursor: pointer; stroke: #fff; stroke-width: 0.5; transition: opacity 0.15s; }
+  .tooltip { position: absolute; background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: 8px; padding: 8px 12px; font-size: 12px; color: var(--color-text-primary); pointer-events: none; opacity: 0; transition: opacity 0.15s; max-width: 200px; z-index: 10; }
+  .state-path { cursor: pointer; stroke: #fff; stroke-width: 0.5; }
   .state-path:hover { opacity: 0.75; stroke-width: 1.5; }
+  svg text { font-family: var(--font-sans); font-size: 7px; pointer-events: none; }
   h2.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
   .filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-  .filter-btn { font-size: 12px; padding: 4px 10px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-secondary); cursor: pointer; }
-  .alignment-section { margin-top: 2rem; border-top: 0.5px solid var(--color-border-tertiary); padding-top: 1.5rem; }
+  .filter-btn { font-size: 12px; padding: 4px 10px; border-radius: 8px; border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-secondary); cursor: pointer; }
   .alignment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }
-  .align-card { background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; }
-  .align-card-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 8px; }
+  .align-card { background: var(--color-background-secondary); border-radius: 12px; padding: 1rem 1.25rem; }
+  .align-card-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
   .align-card-subtitle { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 10px; }
-  .ae-chip { display: inline-flex; align-items: center; font-size: 11px; padding: 3px 8px; border-radius: var(--border-radius-md); margin: 2px; }
+  .ae-chip { display: inline-flex; align-items: center; font-size: 11px; padding: 3px 8px; border-radius: 8px; margin: 2px; }
   .ae-list { display: flex; flex-wrap: wrap; gap: 4px; }
-  .section-label { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
   .ae-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 0.5px solid var(--color-border-tertiary); font-size: 13px; flex-wrap: wrap; }
   .ae-row:last-child { border-bottom: none; }
-  .ae-name { font-weight: 500; color: var(--color-text-primary); display: flex; align-items: center; gap: 8px; min-width: 160px; }
+  .ae-name { font-weight: 500; color: var(--color-text-primary); display: flex; align-items: center; gap: 8px; min-width: 200px; }
   .ae-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .psm-tag { font-size: 11px; color: var(--color-text-secondary); background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 2px 8px; white-space: nowrap; }
+  .iae-badge { font-size: 10px; font-weight: 400; color: var(--color-text-secondary); }
+  .psm-tag { font-size: 11px; color: var(--color-text-secondary); background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: 8px; padding: 2px 8px; white-space: nowrap; }
   .psm-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+  .map-block { position: relative; margin-bottom: 2rem; }
+  .divider { border: none; border-top: 0.5px solid var(--color-border-tertiary); margin: 2rem 0; }
 </style>
 
-<h2 class="sr-only">US map and alignment table showing AE territory assignments overlaid with PSM coverage for TalkingPoints sales team</h2>
+<h2 class="sr-only">AE and PSM territory alignment maps for TalkingPoints sales team</h2>
 
-<div class="map-container" style="position:relative;">
-  <div class="filters" id="filters">
-    <button class="filter-btn" data-filter="all">All</button>
-    <button class="filter-btn" data-filter="ae">AE only</button>
-    <button class="filter-btn" data-filter="psm">PSM only</button>
-  </div>
-  <div class="legend" id="legend"></div>
-  <div style="position:relative;">
-    <svg id="map" viewBox="0 0 960 600" style="width:100%;height:auto;display:block;"></svg>
-  </div>
-  <div class="tooltip" id="tooltip"></div>
+<div id="alignment-top"></div>
+<hr class="divider">
+
+<div class="map-block">
+  <p class="map-title">AE Territory Map</p>
+  <div class="filters" id="filters1"></div>
+  <div class="legend" id="legend1"></div>
+  <svg id="map1" viewBox="0 0 960 600" style="width:100%;height:auto;display:block;"></svg>
+  <div class="tooltip" id="tooltip1"></div>
 </div>
 
-<div class="alignment-section">
-  <p class="section-label">PSM → AE alignment</p>
-  <div class="alignment-grid">
-    <div class="align-card">
-      <div class="align-card-title">Donnaly / Sujeiry</div>
-      <div class="align-card-subtitle">AEs in their territory</div>
-      <div class="ae-list" id="psm-ds-aes"></div>
-    </div>
-    <div class="align-card">
-      <div class="align-card-title">Kristin / Kaleigh</div>
-      <div class="align-card-subtitle">AEs in their territory</div>
-      <div class="ae-list" id="psm-kk-aes"></div>
-    </div>
-  </div>
+<hr class="divider">
 
-  <p class="section-label" style="margin-top:1.5rem;">AE → PSM alignment</p>
-  <div id="ae-psm-list"></div>
+<div class="map-block">
+  <p class="map-title">IAE | PSM Alignment</p>
+  <div class="filters" id="filters2"></div>
+  <div class="legend" id="legend2"></div>
+  <svg id="map2" viewBox="0 0 960 600" style="width:100%;height:auto;display:block;"></svg>
+  <div class="tooltip" id="tooltip2"></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <script>
+const IAE_NAMES = new Set(["Vanessa Tompkins", "Whitney Cooper"]);
+
+function displayName(name) {
+  return IAE_NAMES.has(name) ? `${name} <span class="iae-badge">(IAE)</span>` : name;
+}
+
 const AE_COLORS = {
-  "Vanessa Tompkins": "#534AB7",
   "Whitney Cooper": "#0F6E56",
   "Adam Carruthers": "#993C1D",
   "Jake Stewart": "#993556",
@@ -73,12 +69,19 @@ const AE_COLORS = {
   "Chris Sorrell": "#854F0B"
 };
 const AE_LIGHTS = {
-  "Vanessa Tompkins": "#EEEDFE",
   "Whitney Cooper": "#E1F5EE",
   "Adam Carruthers": "#FAECE7",
   "Jake Stewart": "#FBEAF0",
   "Brett Wheeler": "#E6F1FB",
   "Chris Sorrell": "#FAEEDA"
+};
+const IAE_COLORS = {
+  "Vanessa Tompkins": "#534AB7",
+  "Whitney Cooper": "#0F6E56"
+};
+const IAE_LIGHTS = {
+  "Vanessa Tompkins": "#EEEDFE",
+  "Whitney Cooper": "#E1F5EE"
 };
 
 const PSM_STATES_DS = new Set(["AL","AR","CT","DE","FL","GA","IN","KY","LA","ME","MD","MA","MS","MO","NE","NH","NJ","NY","NC","ND","PA","RI","SC","SD","TN","TX","VT","VA","WV","DC"]);
@@ -98,56 +101,35 @@ BRETT_STATES.forEach(s => AE_STATE_MAP[s] = "Brett Wheeler");
 CHRIS_STATES.forEach(s => AE_STATE_MAP[s] = "Chris Sorrell");
 WHITNEY_MQL.forEach(s => AE_STATE_MAP[s] = "Whitney Cooper");
 ["CA","OR","WA","ID","MT","WY","NV","UT","CO","AZ","NM","HI"].forEach(s => { if (!AE_STATE_MAP[s]) AE_STATE_MAP[s] = "Whitney Cooper"; });
-VANESSA_T7_A1.forEach(s => { if (!AE_STATE_MAP[s]) AE_STATE_MAP[s] = "Vanessa Tompkins"; });
+
+const IAE_STATE_MAP = {};
+WHITNEY_MQL.forEach(s => IAE_STATE_MAP[s] = "Whitney Cooper");
+["CA","OR","WA","ID","MT","WY","NV","UT","CO","AZ","NM","HI"].forEach(s => { if (!IAE_STATE_MAP[s]) IAE_STATE_MAP[s] = "Whitney Cooper"; });
+VANESSA_T7_A1.forEach(s => { if (!IAE_STATE_MAP[s]) IAE_STATE_MAP[s] = "Vanessa Tompkins"; });
 
 const AE_PSM_OVERRIDE = {
   "Vanessa Tompkins": ["Donnaly/Sujeiry", "Kristin/Kaleigh"],
   "Whitney Cooper": ["Donnaly/Sujeiry", "Kristin/Kaleigh"]
 };
 
-function getPSMsForAE(aeName) {
-  if (AE_PSM_OVERRIDE[aeName]) return AE_PSM_OVERRIDE[aeName];
+function getPSMsForAE(name, stateMap) {
+  if (AE_PSM_OVERRIDE[name]) return AE_PSM_OVERRIDE[name];
   const psms = new Set();
-  Object.entries(AE_STATE_MAP).forEach(([state, ae]) => {
-    if (ae === aeName) {
-      if (PSM_STATES_DS.has(state)) psms.add("Donnaly/Sujeiry");
-      if (PSM_STATES_KK.has(state)) psms.add("Kristin/Kaleigh");
+  Object.entries(stateMap).forEach(([s, ae]) => {
+    if (ae === name) {
+      if (PSM_STATES_DS.has(s)) psms.add("Donnaly/Sujeiry");
+      if (PSM_STATES_KK.has(s)) psms.add("Kristin/Kaleigh");
     }
   });
   return [...psms];
 }
 
-function getAEsForPSM(psmStates) {
+function getAEsForPSM(psmStates, stateMap) {
   const aes = new Set();
-  psmStates.forEach(state => { if (AE_STATE_MAP[state]) aes.add(AE_STATE_MAP[state]); });
+  psmStates.forEach(s => { if (stateMap[s]) aes.add(stateMap[s]); });
   return [...aes];
 }
 
-function buildAlignmentSections() {
-  const dsAEs = getAEsForPSM([...PSM_STATES_DS]);
-  const kkAEs = getAEsForPSM([...PSM_STATES_KK]);
-
-  document.getElementById("psm-ds-aes").innerHTML = dsAEs.map(ae =>
-    `<span class="ae-chip" style="background:${AE_LIGHTS[ae]};border:1px solid ${AE_COLORS[ae]};color:${AE_COLORS[ae]}">${ae}</span>`
-  ).join("");
-
-  document.getElementById("psm-kk-aes").innerHTML = kkAEs.map(ae =>
-    `<span class="ae-chip" style="background:${AE_LIGHTS[ae]};border:1px solid ${AE_COLORS[ae]};color:${AE_COLORS[ae]}">${ae}</span>`
-  ).join("");
-
-  document.getElementById("ae-psm-list").innerHTML = Object.keys(AE_COLORS).map(ae => {
-    const psms = getPSMsForAE(ae);
-    return `<div class="ae-row">
-      <div class="ae-name">
-        <div class="ae-dot" style="background:${AE_COLORS[ae]}"></div>
-        ${ae}
-      </div>
-      <div class="psm-tags">${psms.map(p => `<span class="psm-tag">${p}</span>`).join("")}</div>
-    </div>`;
-  }).join("");
-}
-
-let currentFilter = "all";
 const nameToAbbr = {
   "Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO",
   "Connecticut":"CT","Delaware":"DE","Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID",
@@ -160,27 +142,8 @@ const nameToAbbr = {
   "West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY","District of Columbia":"DC"
 };
 
-const svg = d3.select("#map");
-const tooltip = document.getElementById("tooltip");
-
-svg.append("defs").html(`
-  <pattern id="pat-kk" patternUnits="userSpaceOnUse" width="7" height="7">
-    <circle cx="3.5" cy="3.5" r="1.8" fill="#888780" fill-opacity="0.7"/>
-  </pattern>
-`);
-
-const statesGroup = svg.append("g").attr("id","states-base");
-const psmKKGroup = svg.append("g").attr("id","psm-kk-overlay");
-const labelsGroup = svg.append("g").attr("id","labels");
-
-function getStateFill(abbr, filter) {
-  if (filter === "psm") return "#e8e8e0";
-  const ae = AE_STATE_MAP[abbr];
-  return ae ? AE_LIGHTS[ae] : "#e8e8e0";
-}
-
-function setActiveBtn(filter) {
-  document.querySelectorAll(".filter-btn").forEach(b => {
+function setActiveBtn(container, filter) {
+  container.querySelectorAll(".filter-btn").forEach(b => {
     const active = b.dataset.filter === filter;
     b.style.background = active ? "var(--color-background-secondary)" : "var(--color-background-primary)";
     b.style.color = active ? "var(--color-text-primary)" : "var(--color-text-secondary)";
@@ -189,89 +152,155 @@ function setActiveBtn(filter) {
   });
 }
 
-fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
-  .then(r => r.json())
-  .then(us => {
-    const states = topojson.feature(us, us.objects.states);
-    const projection = d3.geoAlbersUsa().scale(1200).translate([480,300]);
-    const path = d3.geoPath().projection(projection);
-    const stateNames = {};
-    us.objects.states.geometries.forEach(g => { stateNames[g.id] = g.properties.name; });
-
-    statesGroup.selectAll("path")
-      .data(states.features)
-      .join("path")
-      .attr("class","state-path")
-      .attr("d", path)
-      .attr("fill", d => {
-        const abbr = nameToAbbr[stateNames[d.id]];
-        return getStateFill(abbr, currentFilter);
-      })
-      .attr("stroke","#fff")
-      .attr("stroke-width","0.5")
-      .on("mousemove", function(event, d) {
-        const name = stateNames[d.id];
-        const abbr = nameToAbbr[name];
-        const ae = AE_STATE_MAP[abbr] || "Unassigned";
-        let psm = "—";
-        if (PSM_STATES_DS.has(abbr)) psm = "Donnaly/Sujeiry";
-        else if (PSM_STATES_KK.has(abbr)) psm = "Kristin/Kaleigh";
-        const container = document.querySelector(".map-container").getBoundingClientRect();
-        tooltip.innerHTML = `<strong style="font-size:13px">${name} (${abbr||""})</strong><br><span style="color:var(--color-text-secondary);font-size:11px">AE: ${ae}</span><br><span style="color:var(--color-text-secondary);font-size:11px">PSM: ${psm}</span>`;
-        tooltip.style.left = (event.clientX - container.left + 10) + "px";
-        tooltip.style.top = (event.clientY - container.top - 10) + "px";
-        tooltip.style.opacity = "1";
-      })
-      .on("mouseleave", () => { tooltip.style.opacity = "0"; });
-
-    psmKKGroup.selectAll(".psm-kk")
-      .data(states.features.filter(d => PSM_STATES_KK.has(nameToAbbr[stateNames[d.id]])))
-      .join("path")
-      .attr("class","state-path psm-kk")
-      .attr("d", path)
-      .attr("fill","url(#pat-kk)")
-      .attr("stroke","none")
-      .style("pointer-events","none");
-
-    states.features.forEach(d => {
-      const centroid = path.centroid(d);
-      if (!centroid || isNaN(centroid[0])) return;
-      const abbr = nameToAbbr[stateNames[d.id]];
-      if (!abbr || abbr === "DC") return;
-      labelsGroup.append("text")
-        .attr("x", centroid[0])
-        .attr("y", centroid[1]+2.5)
-        .attr("text-anchor","middle")
-        .attr("fill","#666")
-        .attr("font-size","6px")
-        .text(abbr);
-    });
-
-    buildLegend();
-    buildAlignmentSections();
-    setActiveBtn("all");
-
-    document.querySelectorAll(".filter-btn").forEach(btn => {
-      btn.addEventListener("click", function() {
-        currentFilter = this.dataset.filter;
-        setActiveBtn(currentFilter);
-        statesGroup.selectAll("path")
-          .attr("fill", d => {
-            const abbr = nameToAbbr[stateNames[d.id]];
-            return getStateFill(abbr, currentFilter);
-          });
-        psmKKGroup.style("opacity", currentFilter === "ae" ? 0 : 1);
-      });
-    });
+function buildFilters(containerId, callback) {
+  const c = document.getElementById(containerId);
+  ["all","ae","psm"].forEach(f => {
+    const btn = document.createElement("button");
+    btn.className = "filter-btn";
+    btn.dataset.filter = f;
+    btn.textContent = f === "all" ? "All" : f === "ae" ? "AE only" : "PSM only";
+    btn.addEventListener("click", () => { setActiveBtn(c, f); callback(f); });
+    c.appendChild(btn);
   });
+  setActiveBtn(c, "all");
+}
 
-function buildLegend() {
-  const leg = document.getElementById("legend");
-  let html = Object.entries(AE_COLORS).map(([name, color]) =>
-    `<div class="legend-item"><div class="legend-swatch" style="background:${AE_LIGHTS[name]};border:1.5px solid ${color}"></div><span>${name} (AE)</span></div>`
+function buildLegendEl(containerId, colorMap, lightMap) {
+  const leg = document.getElementById(containerId);
+  let html = Object.entries(colorMap).map(([name, color]) =>
+    `<div class="legend-item"><div class="legend-swatch" style="background:${lightMap[name]};border:1.5px solid ${color}"></div><span>${name}${IAE_NAMES.has(name) ? ' <span style="font-size:10px;color:var(--color-text-secondary)">(IAE)</span>' : ''}</span></div>`
   ).join("");
   html += `<div class="legend-item"><div class="legend-swatch" style="background:#fff;border:0.5px solid #ccc;"></div><span>Donnaly/Sujeiry (PSM)</span></div>`;
   html += `<div class="legend-item"><div class="legend-swatch" style="background-color:#fff;background-image:radial-gradient(circle,rgba(136,135,128,0.7) 1.8px,transparent 1.8px);background-size:7px 7px;border:0.5px solid #ccc;"></div><span>Kristin/Kaleigh (PSM)</span></div>`;
   leg.innerHTML = html;
 }
+
+function buildAlignmentTop() {
+  const allColors = Object.assign({}, AE_COLORS, {"Vanessa Tompkins": "#534AB7"});
+  const allLights = Object.assign({}, AE_LIGHTS, {"Vanessa Tompkins": "#EEEDFE"});
+  const allStates = Object.assign({}, AE_STATE_MAP, IAE_STATE_MAP);
+
+  const dsAEs = getAEsForPSM([...PSM_STATES_DS], allStates);
+  const kkAEs = getAEsForPSM([...PSM_STATES_KK], allStates);
+
+  function chips(aes) {
+    return aes.filter(ae => allColors[ae]).map(ae =>
+      `<span class="ae-chip" style="background:${allLights[ae]};border:1px solid ${allColors[ae]};color:${allColors[ae]}">${ae}${IAE_NAMES.has(ae) ? ' <span style="font-size:10px;opacity:0.8">(IAE)</span>' : ''}</span>`
+    ).join("");
+  }
+
+  function aeRows() {
+    return Object.keys(allColors).map(ae => {
+      const psms = getPSMsForAE(ae, allStates);
+      return `<div class="ae-row">
+        <div class="ae-name">
+          <div class="ae-dot" style="background:${allColors[ae]}"></div>
+          ${ae}${IAE_NAMES.has(ae) ? ' <span class="iae-badge">(IAE)</span>' : ''}
+        </div>
+        <div class="psm-tags">${psms.map(p => `<span class="psm-tag">${p}</span>`).join("")}</div>
+      </div>`;
+    }).join("");
+  }
+
+  document.getElementById("alignment-top").innerHTML = `
+    <p class="section-label">PSM → AE alignment</p>
+    <div class="alignment-grid">
+      <div class="align-card">
+        <div class="align-card-title">Donnaly / Sujeiry</div>
+        <div class="align-card-subtitle">AEs in their territory</div>
+        <div class="ae-list">${chips(dsAEs)}</div>
+      </div>
+      <div class="align-card">
+        <div class="align-card-title">Kristin / Kaleigh</div>
+        <div class="align-card-subtitle">AEs in their territory</div>
+        <div class="ae-list">${chips(kkAEs)}</div>
+      </div>
+    </div>
+    <p class="section-label" style="margin-top:1rem;">AE → PSM alignment</p>
+    <div>${aeRows()}</div>
+  `;
+}
+
+fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
+  .then(r => r.json())
+  .then(us => {
+    const states = topojson.feature(us, us.objects.states);
+    const proj = d3.geoAlbersUsa().scale(1200).translate([480,300]);
+    const path = d3.geoPath().projection(proj);
+    const stateNames = {};
+    us.objects.states.geometries.forEach(g => { stateNames[g.id] = g.properties.name; });
+
+    buildAlignmentTop();
+    buildLegendEl("legend1", AE_COLORS, AE_LIGHTS);
+    buildLegendEl("legend2", IAE_COLORS, IAE_LIGHTS);
+
+    function makeMap(svgId, tooltipId, stateMap, colorMap, lightMap) {
+      const svg = d3.select("#" + svgId);
+      svg.append("defs").html(`
+        <pattern id="pat-kk-${svgId}" patternUnits="userSpaceOnUse" width="7" height="7">
+          <circle cx="3.5" cy="3.5" r="1.8" fill="#888780" fill-opacity="0.7"/>
+        </pattern>
+      `);
+      const tip = document.getElementById(tooltipId);
+      const container = document.getElementById(svgId).parentElement;
+      let filter = "all";
+      const baseG = svg.append("g");
+      const psmKKG = svg.append("g");
+      const labG = svg.append("g");
+
+      function fill(abbr, f) {
+        if (f === "psm") return "#e8e8e0";
+        return lightMap[stateMap[abbr]] || "#e8e8e0";
+      }
+
+      baseG.selectAll("path")
+        .data(states.features)
+        .join("path")
+        .attr("class","state-path")
+        .attr("d", path)
+        .attr("fill", d => fill(nameToAbbr[stateNames[d.id]], filter))
+        .attr("stroke","#fff").attr("stroke-width","0.5")
+        .on("mousemove", function(event, d) {
+          const name = stateNames[d.id];
+          const abbr = nameToAbbr[name];
+          const ae = stateMap[abbr] || "—";
+          const aeLabel = IAE_NAMES.has(ae) ? `${ae} (IAE)` : ae;
+          let psm = "—";
+          if (PSM_STATES_DS.has(abbr)) psm = "Donnaly/Sujeiry";
+          else if (PSM_STATES_KK.has(abbr)) psm = "Kristin/Kaleigh";
+          const cr = container.getBoundingClientRect();
+          tip.innerHTML = `<strong style="font-size:13px">${name} (${abbr||""})</strong><br><span style="color:var(--color-text-secondary);font-size:11px">AE: ${aeLabel}</span><br><span style="color:var(--color-text-secondary);font-size:11px">PSM: ${psm}</span>`;
+          tip.style.left = (event.clientX - cr.left + 10) + "px";
+          tip.style.top = (event.clientY - cr.top - 10) + "px";
+          tip.style.opacity = "1";
+        })
+        .on("mouseleave", () => { tip.style.opacity = "0"; });
+
+      psmKKG.selectAll("path")
+        .data(states.features.filter(d => PSM_STATES_KK.has(nameToAbbr[stateNames[d.id]])))
+        .join("path").attr("class","state-path")
+        .attr("d", path).attr("fill", `url(#pat-kk-${svgId})`)
+        .attr("stroke","none").style("pointer-events","none");
+
+      states.features.forEach(d => {
+        const c = path.centroid(d);
+        if (!c || isNaN(c[0])) return;
+        const abbr = nameToAbbr[stateNames[d.id]];
+        if (!abbr || abbr === "DC") return;
+        labG.append("text").attr("x",c[0]).attr("y",c[1]+2.5)
+          .attr("text-anchor","middle").attr("fill","#666").attr("font-size","6px").text(abbr);
+      });
+
+      return function(f) {
+        filter = f;
+        baseG.selectAll("path").attr("fill", d => fill(nameToAbbr[stateNames[d.id]], filter));
+        psmKKG.style("opacity", f === "ae" ? 0 : 1);
+      };
+    }
+
+    const update1 = makeMap("map1","tooltip1", AE_STATE_MAP, AE_COLORS, AE_LIGHTS);
+    const update2 = makeMap("map2","tooltip2", IAE_STATE_MAP, IAE_COLORS, IAE_LIGHTS);
+    buildFilters("filters1", update1);
+    buildFilters("filters2", update2);
+  });
 </script>
