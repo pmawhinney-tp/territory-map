@@ -16,15 +16,15 @@
   .align-card { background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; }
   .align-card-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 8px; }
   .align-card-subtitle { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 10px; }
-  .ae-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 3px 8px; border-radius: var(--border-radius-md); margin: 2px; }
+  .ae-chip { display: inline-flex; align-items: center; font-size: 11px; padding: 3px 8px; border-radius: var(--border-radius-md); margin: 2px; }
   .ae-list { display: flex; flex-wrap: wrap; gap: 4px; }
   .section-label { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .ae-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 0.5px solid var(--color-border-tertiary); font-size: 13px; }
+  .ae-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 0.5px solid var(--color-border-tertiary); font-size: 13px; flex-wrap: wrap; }
   .ae-row:last-child { border-bottom: none; }
-  .ae-name { font-weight: 500; color: var(--color-text-primary); display: flex; align-items: center; gap: 8px; }
+  .ae-name { font-weight: 500; color: var(--color-text-primary); display: flex; align-items: center; gap: 8px; min-width: 160px; }
   .ae-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .psm-tag { font-size: 11px; color: var(--color-text-secondary); background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 2px 8px; }
-  .psm-tags { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  .psm-tag { font-size: 11px; color: var(--color-text-secondary); background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 2px 8px; white-space: nowrap; }
+  .psm-tags { display: flex; gap: 4px; flex-wrap: wrap; }
 </style>
 
 <h2 class="sr-only">US map and alignment table showing AE territory assignments overlaid with PSM coverage for TalkingPoints sales team</h2>
@@ -119,9 +119,7 @@ function getPSMsForAE(aeName) {
 
 function getAEsForPSM(psmStates) {
   const aes = new Set();
-  psmStates.forEach(state => {
-    if (AE_STATE_MAP[state]) aes.add(AE_STATE_MAP[state]);
-  });
+  psmStates.forEach(state => { if (AE_STATE_MAP[state]) aes.add(AE_STATE_MAP[state]); });
   return [...aes];
 }
 
@@ -137,8 +135,7 @@ function buildAlignmentSections() {
     `<span class="ae-chip" style="background:${AE_LIGHTS[ae]};border:1px solid ${AE_COLORS[ae]};color:${AE_COLORS[ae]}">${ae}</span>`
   ).join("");
 
-  const aeList = document.getElementById("ae-psm-list");
-  aeList.innerHTML = Object.keys(AE_COLORS).map(ae => {
+  document.getElementById("ae-psm-list").innerHTML = Object.keys(AE_COLORS).map(ae => {
     const psms = getPSMsForAE(ae);
     return `<div class="ae-row">
       <div class="ae-name">
