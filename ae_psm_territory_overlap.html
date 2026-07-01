@@ -76,7 +76,7 @@
 <hr class="divider">
 
 <div class="map-block">
-  <p class="map-title">IAE | PSM Alignment</p>
+  <p class="map-title">Tier 7 Accounts AE | PSM Alignment</p>
   <div class="filters" id="filters2"></div>
   <div class="legend" id="legend2"></div>
   <svg id="map2" viewBox="0 0 960 600" style="width:100%;height:auto;display:block;"></svg>
@@ -84,7 +84,7 @@
 </div>
 
 <script>
-const IAE_NAMES = new Set(["Vanessa Tompkins", "Whitney Cooper"]);
+const IAE_NAMES = new Set(["Whitney Cooper"]);
 
 const AE_COLORS = {
   "Whitney Cooper": "#0F6E56",
@@ -100,17 +100,16 @@ const AE_LIGHTS = {
   "Brett Wheeler": "#E6F1FB",
   "Chris Sorrell": "#FAEEDA"
 };
-const IAE_COLORS = { "Vanessa Tompkins": "#534AB7", "Whitney Cooper": "#0F6E56" };
-const IAE_LIGHTS = { "Vanessa Tompkins": "#EEEDFE", "Whitney Cooper": "#E1F5EE" };
-const ALL_COLORS = Object.assign({}, AE_COLORS, {"Vanessa Tompkins": "#534AB7"});
-const ALL_LIGHTS = Object.assign({}, AE_LIGHTS, {"Vanessa Tompkins": "#EEEDFE"});
+const IAE_COLORS = { "Whitney Cooper": "#0F6E56" };
+const IAE_LIGHTS = { "Whitney Cooper": "#E1F5EE" };
+const ALL_COLORS = Object.assign({}, AE_COLORS);
+const ALL_LIGHTS = Object.assign({}, AE_LIGHTS);
 
 const PSM_TO_AE = {
-  "Donnaly/Sujeiry": ["Adam Carruthers","Chris Sorrell","Jake Stewart","Brett Wheeler","Whitney Cooper","Vanessa Tompkins"],
-  "Kristin/Kaleigh": ["Chris Sorrell","Whitney Cooper","Adam Carruthers","Brett Wheeler","Vanessa Tompkins"]
+  "Donnaly/Sujeiry": ["Adam Carruthers","Chris Sorrell","Jake Stewart","Brett Wheeler","Whitney Cooper"],
+  "Kristin/Kaleigh": ["Chris Sorrell","Whitney Cooper","Adam Carruthers","Brett Wheeler"]
 };
 const AE_TO_PSM = {
-  "Vanessa Tompkins": ["Donnaly/Sujeiry","Kristin/Kaleigh"],
   "Whitney Cooper":   ["Donnaly/Sujeiry","Kristin/Kaleigh"],
   "Adam Carruthers":  ["Donnaly/Sujeiry"],
   "Jake Stewart":     ["Donnaly/Sujeiry"],
@@ -134,10 +133,9 @@ BRETT_STATES.forEach(s => AE_STATE_MAP[s] = "Brett Wheeler");
 CHRIS_STATES.forEach(s => AE_STATE_MAP[s] = "Chris Sorrell");
 WHITNEY_AE.forEach(s => { if (!AE_STATE_MAP[s]) AE_STATE_MAP[s] = "Whitney Cooper"; });
 
-const VANESSA_IAE = new Set(["WA","OR","ID","MT","WY","ND","SD","MN","WI","IL","IN","MI","OH","PA","NY","VT","NH","MA","CT","RI","DE","ME","NJ"]);
 const ALL_US = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC"];
 const IAE_STATE_MAP = {};
-ALL_US.forEach(s => { IAE_STATE_MAP[s] = VANESSA_IAE.has(s) ? "Vanessa Tompkins" : "Whitney Cooper"; });
+ALL_US.forEach(s => { IAE_STATE_MAP[s] = "Whitney Cooper"; });
 
 const nameToAbbr = {
   "Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO",
