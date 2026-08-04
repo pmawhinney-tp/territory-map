@@ -38,33 +38,30 @@
   .psm-tags { display: flex; gap: 4px; flex-wrap: wrap; }
   .map-block { position: relative; margin-bottom: 2rem; }
   .divider { border: none; border-top: 1px solid #eee; margin: 2rem 0; }
+  .footnotes { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee; font-size: 12px; color: #666; line-height: 1.6; }
+  .footnotes strong { color: #1a1a1a; font-weight: 600; }
   @media (max-width: 600px) { .alignment-grid { grid-template-columns: 1fr; } body { padding: 1rem; } }
 </style>
 </head>
 <body>
-
 <h1>AE / PSM Territory Alignment</h1>
-
 <!-- ALIGNMENT TABLES — hardcoded -->
 <p class="section-label">PSM → AE alignment</p>
 <div class="alignment-grid">
   <div class="align-card">
-    <div class="align-card-title">Donnaly / Sujeiry</div>
+    <div class="align-card-title">Donnaly</div>
     <div class="align-card-subtitle">AEs in their territory</div>
     <div class="ae-list" id="ds-chips"></div>
   </div>
   <div class="align-card">
-    <div class="align-card-title">Kristin / Kaleigh</div>
+    <div class="align-card-title">Kristin</div>
     <div class="align-card-subtitle">AEs in their territory</div>
     <div class="ae-list" id="kk-chips"></div>
   </div>
 </div>
-
 <p class="section-label" style="margin-top:1rem;">AE → PSM alignment</p>
 <div id="ae-rows"></div>
-
 <hr class="divider">
-
 <div class="map-block">
   <p class="map-title">AE Territory Map</p>
   <div class="filters" id="filters1"></div>
@@ -72,9 +69,7 @@
   <svg id="map1" viewBox="0 0 960 600" style="width:100%;height:auto;display:block;"></svg>
   <div class="tooltip" id="tooltip1"></div>
 </div>
-
 <hr class="divider">
-
 <div class="map-block">
   <p class="map-title">Tier 7 Accounts AE | PSM Alignment</p>
   <div class="filters" id="filters2"></div>
@@ -82,10 +77,12 @@
   <svg id="map2" viewBox="0 0 960 600" style="width:100%;height:auto;display:block;"></svg>
   <div class="tooltip" id="tooltip2"></div>
 </div>
-
+<div class="footnotes">
+  <div><strong>Emma:</strong> PSM for Strategic Accounts in all states</div>
+  <div><strong>Kaleigh:</strong> PSM for Community Accounts in all states</div>
+</div>
 <script>
-const IAE_NAMES = new Set(["Whitney Cooper"]);
-
+const IAE_NAMES = new Set();
 const AE_COLORS = {
   "Whitney Cooper": "#0F6E56",
   "Adam Carruthers": "#993C1D",
@@ -104,39 +101,33 @@ const IAE_COLORS = { "Whitney Cooper": "#0F6E56" };
 const IAE_LIGHTS = { "Whitney Cooper": "#E1F5EE" };
 const ALL_COLORS = Object.assign({}, AE_COLORS);
 const ALL_LIGHTS = Object.assign({}, AE_LIGHTS);
-
 const PSM_TO_AE = {
-  "Donnaly/Sujeiry": ["Adam Carruthers","Chris Sorrell","Jake Stewart","Brett Wheeler","Whitney Cooper"],
-  "Kristin/Kaleigh": ["Chris Sorrell","Whitney Cooper","Adam Carruthers","Brett Wheeler"]
+  "Donnaly": ["Adam Carruthers","Chris Sorrell","Jake Stewart","Brett Wheeler","Whitney Cooper"],
+  "Kristin": ["Chris Sorrell","Whitney Cooper","Adam Carruthers","Brett Wheeler"]
 };
 const AE_TO_PSM = {
-  "Whitney Cooper":   ["Donnaly/Sujeiry","Kristin/Kaleigh"],
-  "Adam Carruthers":  ["Donnaly/Sujeiry"],
-  "Jake Stewart":     ["Donnaly/Sujeiry"],
-  "Brett Wheeler":    ["Kristin/Kaleigh","Donnaly/Sujeiry"],
-  "Chris Sorrell":    ["Donnaly/Sujeiry","Kristin/Kaleigh"]
+  "Whitney Cooper":   ["Donnaly","Kristin"],
+  "Adam Carruthers":  ["Donnaly"],
+  "Jake Stewart":     ["Donnaly"],
+  "Brett Wheeler":    ["Kristin","Donnaly"],
+  "Chris Sorrell":    ["Donnaly","Kristin"]
 };
-
 const PSM_STATES_DS = new Set(["AL","AR","CT","DE","FL","GA","IN","KY","LA","ME","MD","MA","MS","MO","NE","NH","NJ","NY","NC","ND","PA","RI","SC","SD","TN","TX","VT","VA","WV","DC"]);
 const PSM_STATES_KK = new Set(["AZ","CA","AK","CO","HI","ID","IL","KS","MT","NV","NM","OR","UT","WA","WI","WY","IA","MN","MI","OH","OK"]);
-
 const ADAM_STATES  = ["VA","NC","SC","GA","FL","AL","MS","DC","MD","AK"];
 const JAKE_NE      = ["ME","NH","VT","MA","RI","CT","NY","NJ","DE","PA"];
 const BRETT_STATES = ["MN","WI","IL","MI","TN","IN","OH","KY","WV","WA","OR","ID","WY"];
 const CHRIS_STATES = ["TX","OK","AR","LA","IA","NE","KS","MO","NM","NV","CO","UT","AZ"];
 const WHITNEY_AE   = ["CA","OR","WA","ID","WY","NV","UT","CO","AZ","NM","HI","MT","ND","SD","AK"];
-
 const AE_STATE_MAP = {};
 ADAM_STATES.forEach(s => AE_STATE_MAP[s] = "Adam Carruthers");
 JAKE_NE.forEach(s => AE_STATE_MAP[s] = "Jake Stewart");
 BRETT_STATES.forEach(s => AE_STATE_MAP[s] = "Brett Wheeler");
 CHRIS_STATES.forEach(s => AE_STATE_MAP[s] = "Chris Sorrell");
 WHITNEY_AE.forEach(s => { if (!AE_STATE_MAP[s]) AE_STATE_MAP[s] = "Whitney Cooper"; });
-
 const ALL_US = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC"];
 const IAE_STATE_MAP = {};
 ALL_US.forEach(s => { IAE_STATE_MAP[s] = "Whitney Cooper"; });
-
 const nameToAbbr = {
   "Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO",
   "Connecticut":"CT","Delaware":"DE","Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID",
@@ -148,26 +139,22 @@ const nameToAbbr = {
   "Tennessee":"TN","Texas":"TX","Utah":"UT","Vermont":"VT","Virginia":"VA","Washington":"WA",
   "West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY","District of Columbia":"DC"
 };
-
 function chip(ae) {
   return `<span class="ae-chip" style="background:${ALL_LIGHTS[ae]};border:1px solid ${ALL_COLORS[ae]};color:${ALL_COLORS[ae]}">${ae}${IAE_NAMES.has(ae) ? ' <span style="font-size:10px;opacity:0.8">(IAE)</span>' : ''}</span>`;
 }
-
-document.getElementById("ds-chips").innerHTML = PSM_TO_AE["Donnaly/Sujeiry"].map(chip).join("");
-document.getElementById("kk-chips").innerHTML = PSM_TO_AE["Kristin/Kaleigh"].map(chip).join("");
+document.getElementById("ds-chips").innerHTML = PSM_TO_AE["Donnaly"].map(chip).join("");
+document.getElementById("kk-chips").innerHTML = PSM_TO_AE["Kristin"].map(chip).join("");
 document.getElementById("ae-rows").innerHTML = Object.entries(AE_TO_PSM).map(([ae, psms]) =>
   `<div class="ae-row">
     <div class="ae-name"><div class="ae-dot" style="background:${ALL_COLORS[ae]}"></div>${ae}${IAE_NAMES.has(ae) ? ' <span class="iae-badge">(IAE)</span>' : ''}</div>
     <div class="psm-tags">${psms.map(p => `<span class="psm-tag">${p}</span>`).join("")}</div>
   </div>`
 ).join("");
-
 function setActiveBtn(container, filter) {
   container.querySelectorAll(".filter-btn").forEach(b => {
     b.classList.toggle("active", b.dataset.filter === filter);
   });
 }
-
 function buildFilters(containerId, callback) {
   const c = document.getElementById(containerId);
   ["all","ae","psm"].forEach(f => {
@@ -179,17 +166,15 @@ function buildFilters(containerId, callback) {
     c.appendChild(btn);
   });
 }
-
 function buildLegend(containerId, colorMap, lightMap) {
   const leg = document.getElementById(containerId);
   let html = Object.entries(colorMap).map(([name, color]) =>
     `<div class="legend-item"><div class="legend-swatch" style="background:${lightMap[name]};border:1.5px solid ${color}"></div><span>${name}${IAE_NAMES.has(name) ? ' <span style="font-size:10px;color:#888">(IAE)</span>' : ''}</span></div>`
   ).join("");
-  html += `<div class="legend-item"><div class="legend-swatch" style="background:#fff;border:1px solid #ccc;"></div><span>Donnaly/Sujeiry (PSM)</span></div>`;
-  html += `<div class="legend-item"><div class="legend-swatch" style="background-color:#fff;background-image:radial-gradient(circle,rgba(136,135,128,0.7) 1.8px,transparent 1.8px);background-size:7px 7px;border:1px solid #ccc;"></div><span>Kristin/Kaleigh (PSM)</span></div>`;
+  html += `<div class="legend-item"><div class="legend-swatch" style="background:#fff;border:1px solid #ccc;"></div><span>Donnaly (PSM)</span></div>`;
+  html += `<div class="legend-item"><div class="legend-swatch" style="background-color:#fff;background-image:radial-gradient(circle,rgba(136,135,128,0.7) 1.8px,transparent 1.8px);background-size:7px 7px;border:1px solid #ccc;"></div><span>Kristin (PSM)</span></div>`;
   leg.innerHTML = html;
 }
-
 fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
   .then(r => r.json())
   .then(us => {
@@ -198,22 +183,18 @@ fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
     const path = d3.geoPath().projection(proj);
     const stateNames = {};
     us.objects.states.geometries.forEach(g => { stateNames[g.id] = g.properties.name; });
-
     buildLegend("legend1", AE_COLORS, AE_LIGHTS);
     buildLegend("legend2", IAE_COLORS, IAE_LIGHTS);
-
     function makeMap(svgId, tooltipId, stateMap, colorMap, lightMap) {
       const svg = d3.select("#" + svgId);
       svg.append("defs").html(`<pattern id="pat-${svgId}" patternUnits="userSpaceOnUse" width="7" height="7"><circle cx="3.5" cy="3.5" r="1.8" fill="#888780" fill-opacity="0.7"/></pattern>`);
       const tip = document.getElementById(tooltipId);
       let filter = "all";
       const baseG = svg.append("g"), dotG = svg.append("g"), labG = svg.append("g");
-
       function fillColor(abbr, f) {
         if (f === "psm") return "#e8e8e0";
         return lightMap[stateMap[abbr]] || "#e8e8e0";
       }
-
       baseG.selectAll("path").data(states.features).join("path")
         .attr("class","state-path").attr("d", path)
         .attr("fill", d => fillColor(nameToAbbr[stateNames[d.id]], filter))
@@ -221,23 +202,21 @@ fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
         .on("mousemove", function(event, d) {
           const name = stateNames[d.id], abbr = nameToAbbr[name];
           const ae = stateMap[abbr] || "—";
-          const aeLabel = IAE_NAMES.has(ae) ? `${ae} (IAE)` : ae;
+          const aeLabel = ae;
           let psm = "—";
-          if (PSM_STATES_DS.has(abbr)) psm = "Donnaly/Sujeiry";
-          else if (PSM_STATES_KK.has(abbr)) psm = "Kristin/Kaleigh";
+          if (PSM_STATES_DS.has(abbr)) psm = "Donnaly";
+          else if (PSM_STATES_KK.has(abbr)) psm = "Kristin";
           tip.innerHTML = `<strong style="font-size:13px">${name} (${abbr||""})</strong><br><span style="color:#666;font-size:11px">AE: ${aeLabel}</span><br><span style="color:#666;font-size:11px">PSM: ${psm}</span>`;
           tip.style.left = (event.clientX + 12) + "px";
           tip.style.top = (event.clientY - 10) + "px";
           tip.style.opacity = "1";
         })
         .on("mouseleave", () => { tip.style.opacity = "0"; });
-
       dotG.selectAll("path")
         .data(states.features.filter(d => PSM_STATES_KK.has(nameToAbbr[stateNames[d.id]])))
         .join("path").attr("class","state-path")
         .attr("d", path).attr("fill", `url(#pat-${svgId})`)
         .attr("stroke","none").style("pointer-events","none");
-
       states.features.forEach(d => {
         const c = path.centroid(d);
         if (!c || isNaN(c[0])) return;
@@ -246,14 +225,12 @@ fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
         labG.append("text").attr("x",c[0]).attr("y",c[1]+2.5)
           .attr("text-anchor","middle").attr("fill","#666").attr("font-size","6px").text(abbr);
       });
-
       return function(f) {
         filter = f;
         baseG.selectAll("path").attr("fill", d => fillColor(nameToAbbr[stateNames[d.id]], filter));
         dotG.style("opacity", f === "ae" ? 0 : 1);
       };
     }
-
     const u1 = makeMap("map1","tooltip1", AE_STATE_MAP, AE_COLORS, AE_LIGHTS);
     const u2 = makeMap("map2","tooltip2", IAE_STATE_MAP, IAE_COLORS, IAE_LIGHTS);
     buildFilters("filters1", u1);
